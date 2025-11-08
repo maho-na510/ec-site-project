@@ -1,0 +1,71 @@
+source "https://rubygems.org"
+git_source(:github) { |repo| "https://github.com/#{repo}.git" }
+
+ruby "3.2.2"
+
+# Rails 7 framework
+gem "rails", "~> 7.1.0"
+
+# Database
+gem "mysql2", "~> 0.5"
+
+# Use Puma as the application server
+gem "puma", "~> 6.0"
+
+# Redis for session store and caching
+gem "redis", "~> 5.0"
+gem "hiredis", "~> 0.6"
+
+# JWT for authentication
+gem "jwt", "~> 2.7"
+
+# Password hashing
+gem "bcrypt", "~> 3.1.7"
+
+# CORS handling
+gem "rack-cors", "~> 2.0"
+
+# Reduces boot times through caching; required in config/boot.rb
+gem "bootsnap", require: false
+
+# JSON serialization
+gem "jbuilder", "~> 2.11"
+
+# Environment variables
+gem "dotenv-rails", "~> 2.8"
+
+# Pagination
+gem "kaminari", "~> 1.2"
+
+# Validation
+gem "validates_timeliness", "~> 7.0.0.beta1"
+
+group :development, :test do
+  # Debugging
+  gem "debug", platforms: %i[ mri mingw x64_mingw ]
+  gem "pry-rails", "~> 0.3"
+
+  # Testing
+  gem "factory_bot_rails", "~> 6.4"
+  gem "faker", "~> 3.2"
+end
+
+group :development do
+  # Code quality
+  gem "rubocop", "~> 1.56", require: false
+  gem "rubocop-rails", "~> 2.21", require: false
+
+  # N+1 query detection
+  gem "bullet", "~> 7.1"
+end
+
+group :test do
+  # Test coverage
+  gem "simplecov", "~> 0.22", require: false
+
+  # API testing
+  gem "shoulda-matchers", "~> 5.3"
+end
+
+# Windows does not include zoneinfo files, so bundle the tzinfo-data gem
+gem "tzinfo-data", platforms: %i[ mingw mswin x64_mingw jruby ]
