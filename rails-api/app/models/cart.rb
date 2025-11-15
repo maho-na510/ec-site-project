@@ -12,6 +12,11 @@ class Cart < ApplicationRecord
   scope :active, -> { where(checked_out_at: nil) }
   scope :checked_out, -> { where.not(checked_out_at: nil) }
 
+  # Virtual status attribute
+  def status
+    checked_out_at.present? ? 'checked_out' : 'active'
+  end
+
   # Calculate total amount
   def total_amount
     cart_items.includes(:product).sum { |item| item.quantity * item.product.price }

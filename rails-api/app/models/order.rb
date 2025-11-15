@@ -28,12 +28,12 @@ class Order < ApplicationRecord
   scope :cancelled, -> { where(status: 'cancelled') }
 
   # State transitions
-  def can_cancel?
+  def can_be_cancelled?
     %w[pending processing].include?(status)
   end
 
   def cancel!
-    raise "Cannot cancel order in #{status} status" unless can_cancel?
+    raise "Cannot cancel order in #{status} status" unless can_be_cancelled?
 
     transaction do
       # Restore stock

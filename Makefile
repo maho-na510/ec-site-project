@@ -39,31 +39,31 @@ help:
 setup:
 	@echo "Setting up EC Site project..."
 	@echo "Building Docker containers..."
-	docker-compose build
+	docker compose build
 	@echo "Creating database..."
-	docker-compose up -d mysql redis
+	docker compose up -d mysql redis
 	@echo "Waiting for MySQL to be ready..."
 	@sleep 10
 	@echo "Running Rails migrations..."
-	docker-compose run --rm rails-api bundle install
-	docker-compose run --rm rails-api bundle exec rake db:create db:migrate
+	docker compose run --rm rails-api bundle install
+	docker compose run --rm rails-api bundle exec rake db:create db:migrate
 	@echo "Running Laravel migrations..."
-	docker-compose run --rm laravel-api composer install
-	docker-compose run --rm laravel-api php artisan migrate
+	docker compose run --rm laravel-api composer install
+	docker compose run --rm laravel-api php artisan migrate
 	@echo "Installing frontend dependencies..."
-	docker-compose run --rm frontend npm install
+	docker compose run --rm frontend npm install
 	@echo "Seeding database..."
 	$(MAKE) seed
 	@echo "Setup complete! Run 'make start' to start the application."
 
 # Build all containers
 build:
-	docker-compose build
+	docker compose build
 
 # Start all containers
 start:
 	@echo "Starting all containers..."
-	docker-compose up -d
+	docker compose up -d
 	@echo "Application started!"
 	@echo "  Frontend: http://localhost:5173"
 	@echo "  Rails API: http://localhost:3001/api/v1"
@@ -72,7 +72,7 @@ start:
 # Stop all containers
 stop:
 	@echo "Stopping all containers..."
-	docker-compose down
+	docker compose down
 
 # Restart all containers
 restart:
@@ -82,12 +82,12 @@ restart:
 
 # View logs
 logs:
-	docker-compose logs -f
+	docker compose logs -f
 
 # Clean up containers and volumes
 clean:
 	@echo "Stopping containers and removing volumes..."
-	docker-compose down -v
+	docker compose down -v
 	@echo "Cleaning up Docker system..."
 	docker system prune -f
 	@echo "Cleanup complete!"
@@ -97,85 +97,85 @@ test:
 	@echo "Running all tests..."
 	@echo "================================"
 	@echo "Running Rails tests..."
-	docker-compose run --rm rails-api bundle exec rails test
+	docker compose run --rm rails-api bundle exec rails test
 	@echo "================================"
 	@echo "Running Laravel tests..."
-	docker-compose run --rm laravel-api php artisan test
+	docker compose run --rm laravel-api php artisan test
 	@echo "================================"
 	@echo "Running Frontend tests..."
-	docker-compose run --rm frontend npm test -- --run
+	docker compose run --rm frontend npm test -- --run
 	@echo "================================"
 	@echo "All tests complete!"
 
 # Run Rails tests only
 test-rails:
 	@echo "Running Rails tests..."
-	docker-compose run --rm rails-api bundle exec rails test
+	docker compose run --rm rails-api bundle exec rails test
 
 # Run Laravel tests only
 test-laravel:
 	@echo "Running Laravel tests..."
-	docker-compose run --rm laravel-api php artisan test
+	docker compose run --rm laravel-api php artisan test
 
 # Run Frontend tests only
 test-frontend:
 	@echo "Running Frontend tests..."
-	docker-compose run --rm frontend npm test -- --run
+	docker compose run --rm frontend npm test -- --run
 
 # Run E2E tests
 test-e2e:
 	@echo "Running E2E tests..."
-	docker-compose up -d
+	docker compose up -d
 	@echo "Waiting for services to be ready..."
 	@sleep 5
-	docker-compose run --rm frontend npm run test:e2e
+	docker compose run --rm frontend npm run test:e2e
 
 # Generate test coverage reports
 coverage:
 	@echo "Generating test coverage reports..."
 	@echo "Rails coverage..."
-	docker-compose run --rm rails-api bundle exec rails test
+	docker compose run --rm rails-api bundle exec rails test
 	@echo "Laravel coverage..."
-	docker-compose run --rm laravel-api php artisan test --coverage
+	docker compose run --rm laravel-api php artisan test --coverage
 	@echo "Frontend coverage..."
-	docker-compose run --rm frontend npm test -- --coverage
+	docker compose run --rm frontend npm test -- --coverage
 	@echo "Coverage reports generated!"
 
 # Run database migrations
 migrate:
 	@echo "Running database migrations..."
-	docker-compose run --rm rails-api bundle exec rake db:migrate
-	docker-compose run --rm laravel-api php artisan migrate
+	docker compose run --rm rails-api bundle exec rake db:migrate
+	docker compose run --rm laravel-api php artisan migrate
 	@echo "Migrations complete!"
 
 # Seed database
 seed:
 	@echo "Seeding database..."
-	docker-compose run --rm rails-api bundle exec rake db:seed
-	docker-compose run --rm laravel-api php artisan db:seed
+	docker compose run --rm rails-api bundle exec rake db:seed
+	docker compose run --rm laravel-api php artisan db:seed
 	@echo "Seeding complete!"
 
 # Reset database
 db-reset:
 	@echo "Resetting database..."
-	docker-compose run --rm rails-api bundle exec rake db:drop db:create db:migrate db:seed
-	docker-compose run --rm laravel-api php artisan migrate:fresh --seed
+	docker compose run --rm rails-api bundle exec rake db:drop db:create db:migrate db:seed
+	docker compose run --rm laravel-api php artisan migrate:fresh --seed
 	@echo "Database reset complete!"
 
 # Shell access
 shell-rails:
-	docker-compose run --rm rails-api bash
+	docker compose run --rm rails-api bash
 
 shell-laravel:
-	docker-compose run --rm laravel-api bash
+	docker compose run --rm laravel-api bash
 
 shell-frontend:
-	docker-compose run --rm frontend sh
+	docker compose run --rm frontend sh
 
 # Install dependencies
 install:
 	@echo "Installing dependencies..."
-	docker-compose run --rm rails-api bundle install
-	docker-compose run --rm laravel-api composer install
-	docker-compose run --rm frontend npm install
+	docker compose run --rm rails-api bundle install
+	docker compose run --rm laravel-api composer install
+	docker compose run --rm frontend npm install
 	@echo "Dependencies installed!"

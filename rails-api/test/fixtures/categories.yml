@@ -1,0 +1,14 @@
+one:
+  name: Electronics
+  slug: electronics
+  description: Electronic devices and accessories
+
+two:
+  name: Clothing
+  slug: clothing
+  description: Fashion and apparel
+
+three:
+  name: Books
+  slug: books
+  description: Books and publications

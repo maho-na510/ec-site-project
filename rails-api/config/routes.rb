@@ -11,15 +11,13 @@ Rails.application.routes.draw do
       post 'auth/refresh', to: 'auth#refresh'
 
       # Password reset routes
-      post 'password/forgot', to: 'passwords#forgot'
-      post 'password/reset', to: 'passwords#reset'
+      post 'passwords/forgot', to: 'passwords#forgot'
+      post 'passwords/reset', to: 'passwords#reset'
 
       # User routes
-      resources :users, only: [:show, :update] do
-        member do
-          get 'orders', to: 'users#orders'
-        end
-      end
+      get 'users/me', to: 'users#show'
+      put 'users/me', to: 'users#update'
+      get 'users/me/orders', to: 'users#orders'
 
       # Product routes
       resources :products, only: [:index, :show] do
