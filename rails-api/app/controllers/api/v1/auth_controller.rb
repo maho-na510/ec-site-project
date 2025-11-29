@@ -14,7 +14,7 @@ module Api
           render json: {
             success: true,
             data: {
-              user: user_json(result[:user]),
+              user: result[:user],
               access_token: result[:access_token]
             }
           }, status: :ok
@@ -105,7 +105,11 @@ module Api
       private
 
       def user_params
-        params.require(:user).permit(:name, :email, :password, :password_confirmation, :address)
+        if params[:user]
+          params.require(:user).permit(:name, :email, :password, :password_confirmation, :address)
+        else
+          params.permit(:name, :email, :password, :password_confirmation, :address)
+        end
       end
 
       def user_json(user)

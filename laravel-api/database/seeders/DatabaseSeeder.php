@@ -20,8 +20,15 @@ class DatabaseSeeder extends Seeder
 
         // Clear existing admin data
         echo "Clearing existing admin data...\n";
+
+        // Disable foreign key checks
+        \DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+
         InventoryLog::truncate();
         Admin::truncate();
+
+        // Re-enable foreign key checks
+        \DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
         echo "✅ Existing admin data cleared\n";
 
@@ -32,14 +39,14 @@ class DatabaseSeeder extends Seeder
             'name' => 'Admin User',
             'email' => 'admin@example.com',
             'password' => Hash::make('admin123'),
-            'role' => 'admin',
+            
         ]);
 
         $admin2 = Admin::create([
             'name' => 'Manager User',
             'email' => 'manager@example.com',
             'password' => Hash::make('manager123'),
-            'role' => 'manager',
+            
         ]);
 
         echo "✅ Created " . Admin::count() . " admin users\n";

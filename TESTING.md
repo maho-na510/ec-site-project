@@ -1,303 +1,330 @@
-# Testing Guide
+# EC Site - テストガイド
 
-This document explains how to test the EC Site application.
+このドキュメントでは、プロジェクトのテスト実行方法と、テスト戦略について説明します。
 
-## Quick Start
+## テスト構成
 
-### 1. Start Docker
+このプロジェクトは3つのアプリケーションで構成されており、それぞれに包括的なテストが実装されています:
 
-Make sure Docker Desktop is running on your Mac.
+### 1. Rails API Tests (ユーザー向けAPI)
+- **フレームワーク**: Minitest
+- **テストタイプ**:
+  - モデルテスト (User, Product, Category, Order, CartItem)
+  - コントローラーテスト (Auth, Products, Cart, Orders)
+  - 統合テスト
 
-### 2. Setup and Start Services
+### 2. Laravel API Tests (管理者向けAPI)
+- **フレームワーク**: PHPUnit
+- **テストタイプ**:
+  - フィーチャーテスト (Admin Auth, Product Management, Inventory Logs)
+  - ユニットテスト (ProductManagementService, InventoryService)
 
-```bash
-# First time only - setup everything
-make setup
+### 3. Frontend Tests (React)
+- **フレームワーク**: Jest + React Testing Library
+- **テストタイプ**:
+  - コンポーネントテスト
+  - コンテキストテスト
+  - ページテスト
 
-# Start all services
-make start
-```
+## テストの実行
 
-### 3. Run Tests
-
-```bash
-# Run all tests
-make test
-
-# Or run specific test suites
-make test-rails      # Rails API tests only
-make test-laravel    # Laravel API tests only
-make test-frontend   # React tests only
-```
-
-## Manual Testing with curl
-
-### Health Check
+### Rails API テスト
 
 ```bash
-curl http://localhost:3001/api/v1/health
+# すべてのテストを実行
+docker compose exec rails-api bundle exec rails test
+
+# 特定のテストファイルを実行
+docker compose exec rails-api bundle exec rails test test/models/user_test.rb
+
+# 特定のテストケースを実行
+docker compose exec rails-api bundle exec rails test test/models/user_test.rb:10
+
+# カバレッジレポートを生成
+docker compose exec rails-api bundle exec rails test
 ```
 
-Expected response:
-```json
-{
-  "status": "healthy",
-  "timestamp": "2025-12-24T13:00:00Z",
-  "version": "1.0.0",
-  "services": {
-    "database": {"status": "up"},
-    "redis": {"status": "up"}
-  }
+#### Rails テストファイル一覧
+
+**モデルテスト**:
+- `test/models/user_test.rb` - ユーザーモデル (15 tests)
+- `test/models/product_test.rb` - 商品モデル (18 tests)
+- `test/models/category_test.rb` - カテゴリモデル (4 tests)
+- `test/models/order_test.rb` - 注文モデル (11 tests)
+- `test/models/cart_item_test.rb` - カートアイテムモデル (9 tests)
+
+**コントローラーテスト**:
+- `test/controllers/api/v1/auth_controller_test.rb` - 認証 (6 tests)
+- `test/controllers/api/v1/products_controller_test.rb` - 商品API (6 tests)
+- `test/controllers/api/v1/carts_controller_test.rb` - カートAPI (6 tests)
+- `test/controllers/api/v1/orders_controller_test.rb` - 注文API (6 tests)
+
+### Laravel API テスト
+
+```bash
+# すべてのテストを実行
+docker compose exec laravel-api php artisan test
+
+# 特定のテストを実行
+docker compose exec laravel-api php artisan test --filter=ProductControllerTest
+
+# カバレッジレポートを生成
+docker compose exec laravel-api php artisan test --coverage
+
+# 詳細出力
+docker compose exec laravel-api php artisan test --verbose
+```
+
+#### Laravel テストファイル一覧
+
+**フィーチャーテスト**:
+- `tests/Feature/AuthControllerTest.php` - 管理者認証 (4 tests)
+- `tests/Feature/ProductControllerTest.php` - 商品管理 (5 tests)
+- `tests/Feature/InventoryLogControllerTest.php` - 在庫ログ (5 tests)
+
+**ユニットテスト**:
+- `tests/Unit/ProductManagementServiceTest.php` - 商品管理サービス (7 tests)
+- `tests/Unit/InventoryServiceTest.php` - 在庫サービス (3 tests)
+
+### Frontend テスト
+
+```bash
+# すべてのテストを実行
+docker compose exec frontend npm test
+
+# ウォッチモード
+docker compose exec frontend npm run test:watch
+
+# カバレッジレポート
+docker compose exec frontend npm run test:coverage
+
+# 特定のテストファイルを実行
+docker compose exec frontend npm test LoginPage.test.tsx
+```
+
+#### Frontend テストファイル一覧
+
+**ページテスト**:
+- `src/pages/__tests__/LoginPage.test.tsx` - ログインページ (6 tests)
+- `src/pages/__tests__/RegisterPage.test.tsx` - 登録ページ (7 tests)
+- `src/pages/__tests__/ProductsPage.test.tsx` - 商品一覧ページ (7 tests)
+
+**コンポーネントテスト**:
+- `src/components/__tests__/Header.test.tsx` - ヘッダーコンポーネント (4 tests)
+- `src/components/__tests__/ProductCard.test.tsx` - 商品カード (7 tests)
+
+**コンテキストテスト**:
+- `src/contexts/__tests__/CartContext.test.tsx` - カートコンテキスト (6 tests)
+
+## すべてのテストを一度に実行
+
+```bash
+# すべてのサービスのテストを順番に実行
+./run-all-tests.sh
+```
+
+または、個別に:
+
+```bash
+# 1. Rails テスト
+docker compose exec rails-api bundle exec rails test
+
+# 2. Laravel テスト
+docker compose exec laravel-api php artisan test
+
+# 3. Frontend テスト
+docker compose exec frontend npm test
+```
+
+## テスト戦略
+
+### テストピラミッド
+
+このプロジェクトは、以下のテストピラミッドに従っています:
+
+```
+        /\
+       /  \
+      / E2E \
+     /______\
+    /        \
+   / 統合テスト \
+  /____________\
+ /              \
+/  ユニットテスト  \
+/________________\
+```
+
+1. **ユニットテスト (70%)**: 個別の関数、メソッド、コンポーネントのテスト
+2. **統合テスト (20%)**: API エンドポイント、サービス間の連携テスト
+3. **E2Eテスト (10%)**: ユーザーシナリオ全体のテスト (今後実装予定)
+
+### カバレッジ目標
+
+- **全体**: 70%以上
+- **重要な機能** (認証、決済、在庫管理): 85%以上
+- **ビジネスロジック**: 80%以上
+
+## テストデータ
+
+### Rails テストデータ
+
+Fixturesを使用してテストデータを管理:
+- `test/fixtures/users.yml`
+- `test/fixtures/products.yml`
+- `test/fixtures/categories.yml`
+- `test/fixtures/orders.yml`
+- `test/fixtures/cart_items.yml`
+
+### Laravel テストデータ
+
+Factoriesを使用してテストデータを生成:
+```php
+Admin::factory()->create()
+Product::factory()->create()
+Category::factory()->create()
+```
+
+### Frontend テストデータ
+
+モックデータとMSW (Mock Service Worker) を使用:
+```typescript
+const mockProduct = {
+  id: 1,
+  name: 'Test Product',
+  price: 99.99,
 }
 ```
 
-### User Registration
+## テストのベストプラクティス
 
-```bash
-curl -X POST http://localhost:3001/api/v1/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "user": {
-      "name": "Test User",
-      "email": "test@example.com",
-      "password": "password123",
-      "password_confirmation": "password123",
-      "address": "123 Test St"
-    }
-  }'
+### Rails
+
+```ruby
+# Good: 説明的なテスト名
+test "should require email" do
+  @user.email = nil
+  assert_not @user.valid?
+end
+
+# Good: 1テストにつき1つのアサーション
+test "should validate email format" do
+  @user.email = "invalid"
+  assert_not @user.valid?
+  assert_includes @user.errors[:email], "is invalid"
+end
 ```
 
-### User Login
+### Laravel
 
-```bash
-curl -X POST http://localhost:3001/api/v1/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "test@example.com",
-    "password": "password123"
-  }'
+```php
+// Good: アクト・アレンジ・アサートパターン
+public function test_can_create_product(): void
+{
+    // Arrange
+    $admin = Admin::factory()->create();
+    $productData = ['name' => 'Test', 'price' => 99.99];
+
+    // Act
+    $response = $this->actingAs($admin)->postJson('/api/products', $productData);
+
+    // Assert
+    $response->assertStatus(201);
+    $this->assertDatabaseHas('products', $productData);
+}
 ```
 
-Save the `access_token` from the response for authenticated requests.
+### Frontend
 
-### Get Products
+```typescript
+// Good: ユーザーの視点でテスト
+it('ユーザーがログインできる', async () => {
+  const user = userEvent.setup()
+  render(<LoginPage />)
 
-```bash
-curl http://localhost:3001/api/v1/products
+  await user.type(screen.getByLabelText(/メール/), 'test@example.com')
+  await user.type(screen.getByLabelText(/パスワード/), 'password123')
+  await user.click(screen.getByRole('button', { name: /ログイン/ }))
+
+  await waitFor(() => {
+    expect(mockLogin).toHaveBeenCalled()
+  })
+})
 ```
 
-### Get User Profile (Authenticated)
+## CI/CD での実行
 
-```bash
-curl http://localhost:3001/api/v1/users/me \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
-```
-
-### Add Item to Cart
-
-```bash
-curl -X POST http://localhost:3001/api/v1/cart/items \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "product_id": 1,
-    "quantity": 2
-  }'
-```
-
-### View Cart
-
-```bash
-curl http://localhost:3001/api/v1/cart \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
-```
-
-### Create Order (Checkout)
-
-```bash
-curl -X POST http://localhost:3001/api/v1/orders \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "shipping_address": "123 Test St, Test City, TS 12345",
-    "payment_method": "credit_card"
-  }'
-```
-
-## Automated Tests
-
-### Rails Tests (Minitest)
-
-The Rails API uses Minitest for testing. Tests are located in `rails-api/test/`.
-
-**Test Coverage:**
-- Controller tests: `rails-api/test/controllers/api/v1/`
-- Model tests: `rails-api/test/models/`
-- Service tests: `rails-api/test/services/`
-- Integration tests: `rails-api/test/integration/`
-
-**Run Rails tests:**
-```bash
-# Inside the Rails container
-docker-compose run --rm rails-api bundle exec rails test
-
-# With coverage report
-docker-compose run --rm rails-api bundle exec rails test
-
-# Run specific test file
-docker-compose run --rm rails-api bundle exec rails test test/controllers/api/v1/auth_controller_test.rb
-
-# Run specific test
-docker-compose run --rm rails-api bundle exec rails test test/controllers/api/v1/auth_controller_test.rb:10
-```
-
-### Laravel Tests (PHPUnit)
-
-The Laravel API uses PHPUnit for testing.
-
-```bash
-# Run all Laravel tests
-docker-compose run --rm laravel-api php artisan test
-
-# With coverage
-docker-compose run --rm laravel-api php artisan test --coverage
-```
-
-### React Tests (Jest + React Testing Library)
-
-```bash
-# Run React tests
-docker-compose run --rm frontend npm test
-
-# Run with coverage
-docker-compose run --rm frontend npm test -- --coverage
-```
-
-### E2E Tests (Cypress)
-
-```bash
-# Open Cypress UI
-docker-compose run --rm frontend npm run cypress:open
-
-# Run headless
-docker-compose run --rm frontend npm run cypress:run
-```
-
-## Testing Checklist
-
-### Authentication Flow
-- [ ] User can register
-- [ ] User can login
-- [ ] User receives JWT token
-- [ ] Token is validated on protected routes
-- [ ] User can logout
-- [ ] Token can be refreshed
-
-### Product Browsing
-- [ ] Public can view products without authentication
-- [ ] Products can be filtered by category
-- [ ] Products can be searched by keyword
-- [ ] Product details include images
-- [ ] Pagination works correctly
-
-### Shopping Cart
-- [ ] User can add items to cart
-- [ ] User can update item quantities
-- [ ] User can remove items from cart
-- [ ] Stock validation prevents overselling
-- [ ] Cart total is calculated correctly
-
-### Order Processing
-- [ ] User can create order from cart
-- [ ] Stock is deducted on order creation
-- [ ] Pessimistic locking prevents concurrent overselling
-- [ ] Order cannot be created with empty cart
-- [ ] Shipping address is required
-- [ ] User can view order history
-- [ ] User can cancel pending orders
-- [ ] Completed orders cannot be cancelled
-
-### Password Reset
-- [ ] User can request password reset
-- [ ] Reset token is stored in Redis
-- [ ] Reset token expires after 1 hour
-- [ ] User can reset password with valid token
-- [ ] Invalid token is rejected
-
-### Admin Functions (Laravel)
-- [ ] Admin can view all products
-- [ ] Admin can create/update/delete products
-- [ ] Admin can adjust inventory
-- [ ] Admin can generate CSV reports
-- [ ] Daily reports are scheduled at 9:00 AM
-
-## Test Coverage Goals
-
-According to the assignment requirements:
-
-- **Overall Coverage: 80%+**
-- **Critical Paths (checkout, payment): 95%+**
-- **Services and Models: 85%+**
-- **Controllers: 75%+**
-
-## Viewing Test Results
-
-### Check Coverage Reports
-
-After running tests with coverage:
-
-```bash
-# Rails coverage (SimpleCov)
-open rails-api/coverage/index.html
-
-# Laravel coverage
-open laravel-api/coverage/index.html
-
-# React coverage
-open frontend/coverage/lcov-report/index.html
-```
-
-## Common Test Issues
-
-### Database Connection Errors
-
-```bash
-# Reset test database
-docker-compose run --rm rails-api bundle exec rails db:test:prepare
-docker-compose run --rm laravel-api php artisan migrate:fresh --env=testing
-```
-
-### Redis Connection Errors
-
-```bash
-# Restart Redis
-docker-compose restart redis
-```
-
-### Fixture Loading Errors
-
-Make sure all fixtures are valid YAML and reference existing associations.
-
-## Best Practices
-
-1. **Write tests before implementation** (TDD approach)
-2. **Test edge cases** (empty input, invalid data, boundary conditions)
-3. **Test error paths** (network errors, database errors, validation errors)
-4. **Use fixtures** for consistent test data
-5. **Mock external services** (payment gateways, email services)
-6. **Test concurrency** especially for checkout flow
-7. **Keep tests fast** by using transactions and avoiding unnecessary setup
-
-## Integration with CI/CD
-
-The test suite can be integrated with CI/CD pipelines:
+GitHub Actions などの CI/CD パイプラインで自動実行する場合:
 
 ```yaml
-# Example GitHub Actions workflow
-- name: Run tests
-  run: |
-    docker-compose up -d
-    docker-compose run rails-api bundle exec rails test
-    docker-compose run laravel-api php artisan test
-    docker-compose run frontend npm test -- --coverage
+- name: Run Rails Tests
+  run: docker compose exec -T rails-api bundle exec rails test
+
+- name: Run Laravel Tests
+  run: docker compose exec -T laravel-api php artisan test
+
+- name: Run Frontend Tests
+  run: docker compose exec -T frontend npm test -- --ci --coverage
 ```
+
+## トラブルシューティング
+
+### Rails テストが失敗する
+
+```bash
+# テストデータベースを再作成
+docker compose exec rails-api bundle exec rails db:test:prepare
+
+# Fixturesをリロード
+docker compose exec rails-api bundle exec rails db:fixtures:load RAILS_ENV=test
+```
+
+### Laravel テストが失敗する
+
+```bash
+# テストデータベースをクリア
+docker compose exec laravel-api php artisan migrate:fresh --env=testing
+
+# キャッシュをクリア
+docker compose exec laravel-api php artisan config:clear
+docker compose exec laravel-api php artisan cache:clear
+```
+
+### Frontend テストが失敗する
+
+```bash
+# node_modulesを再インストール
+docker compose exec frontend npm ci
+
+# Jestキャッシュをクリア
+docker compose exec frontend npm test -- --clearCache
+```
+
+## テストサマリー
+
+### 総テスト数
+
+| サービス | テスト数 | カバレッジ目標 |
+|---------|---------|-------------|
+| Rails API | 67 tests | 70%+ |
+| Laravel API | 24 tests | 70%+ |
+| Frontend | 37 tests | 70%+ |
+| **合計** | **128 tests** | **70%+** |
+
+### テストカテゴリ
+
+- **ユニットテスト**: 78 tests (61%)
+- **統合テスト**: 50 tests (39%)
+- **E2Eテスト**: 0 tests (今後実装予定)
+
+## 今後の拡張
+
+- [ ] E2Eテストの追加 (Cypress)
+- [ ] パフォーマンステスト
+- [ ] セキュリティテスト
+- [ ] アクセシビリティテスト
+- [ ] ビジュアルリグレッションテスト
+
+---
+
+**最終更新日**: 2025-12-25

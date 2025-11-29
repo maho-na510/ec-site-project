@@ -7,7 +7,34 @@ class ApplicationController < ActionController::API
   rescue_from InsufficientStockError, with: :insufficient_stock
   rescue_from StandardError, with: :internal_server_error
 
+  # Authentication
+  before_action :authenticate_user!
+
   private
+
+  def authenticate_user!
+    token = request.headers['Authorization']&.split(' ')&.last
+    return render_unauthorized unless token
+
+    begin
+      decoded_token = JWT.decode(token, Rails.application.credentials.secret_key_base, true, algorithm: 'HS256')
+      @current_user = User.find(decoded_token[0]['user_id'])
+    rescue JWT::DecodeError, ActiveRecord::RecordNotFound
+      render_unauthorized
+    end
+  end
+
+  def current_user
+    @current_user
+  end
+
+  def render_unauthorized
+    render json: {
+      success: false,
+      error: 'Unauthorized',
+      message: 'You must be logged in to access this resource'
+    }, status: :unauthorized
+  end
 
   def record_not_found(exception)
     render json: {

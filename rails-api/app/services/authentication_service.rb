@@ -59,7 +59,7 @@ class AuthenticationService
 
     # Check if session exists in Redis
     session_key = "session:user:#{payload['user_id']}:#{token[0..15]}"
-    return nil unless Redis.current.exists?(session_key)
+    return nil unless $redis.exists?(session_key)
 
     User.active.find_by(id: payload['user_id'])
   end
@@ -68,7 +68,7 @@ class AuthenticationService
   def self.logout(user, token)
     # Remove session from Redis
     session_key = "session:user:#{user.id}:#{token[0..15]}"
-    Redis.current.del(session_key)
+    $redis.del(session_key)
 
     { success: true, message: 'Logged out successfully' }
   end
@@ -91,7 +91,7 @@ class AuthenticationService
       last_accessed: Time.current.to_s
     }
 
-    Redis.current.setex(session_key, 24.hours.to_i, session_data.to_json)
+    $redis.setex(session_key, 24.hours.to_i, session_data.to_json)
   end
 
   private

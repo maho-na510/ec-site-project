@@ -1,0 +1,14 @@
+one:
+  user: one
+  product: one
+  quantity: 2
+
+two:
+  user: one
+  product: two
+  quantity: 1
+
+three:
+  user: two
+  product: three
+  quantity: 3
