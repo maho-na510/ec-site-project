@@ -2,36 +2,39 @@ import { userApi, adminApi } from './api';
 import { LoginFormData, RegisterFormData, LoginResponse, User, Admin } from '@types/index';
 
 export const authService = {
-  // User authentication
+  // ユーザーログイン
   async login(credentials: LoginFormData): Promise<LoginResponse> {
     const response = await userApi.post<LoginResponse>('/auth/login', credentials);
-    this.setTokens(response.data.token, response.data.refreshToken);
-    return response.data;
+    // Railsは { user, accessToken } を返す (api.tsのインターセプターでsnake→camel変換済み)
+    const data = response.data as unknown as { user: User; accessToken: string };
+    localStorage.setItem('token', data.accessToken);
+    return { user: data.user, accessToken: data.accessToken };
   },
 
-  async register(data: RegisterFormData): Promise<{ message: string; userId: number }> {
-    const response = await userApi.post('/users/register', data);
-    return response.data;
+  // 新規会員登録
+  async register(data: RegisterFormData): Promise<{ message: string }> {
+    const response = await userApi.post('/auth/register', data);
+    return response.data as { message: string };
   },
 
-  async confirmEmail(token: string): Promise<{ message: string }> {
-    const response = await userApi.post('/users/confirm', { token });
-    return response.data;
-  },
-
+  // パスワードリセットのメール送信
   async requestPasswordReset(email: string): Promise<{ message: string }> {
-    const response = await userApi.post('/auth/password-reset/request', { email });
-    return response.data;
+    const response = await userApi.post('/passwords/forgot', { email });
+    return response.data as { message: string };
   },
 
+  // パスワードリセット実行
   async resetPassword(token: string, newPassword: string): Promise<{ message: string }> {
-    const response = await userApi.post('/auth/password-reset/confirm', {
+    // Railsは { token, password, passwordConfirmation } を期待（snake_case変換後に password_confirmation）
+    const response = await userApi.post('/passwords/reset', {
       token,
-      newPassword,
+      password: newPassword,
+      passwordConfirmation: newPassword,
     });
-    return response.data;
+    return response.data as { message: string };
   },
 
+  // ログアウト
   async logout(): Promise<void> {
     try {
       await userApi.post('/auth/logout');
@@ -40,18 +43,21 @@ export const authService = {
     }
   },
 
+  // ログイン中のユーザー情報取得
   async getCurrentUser(): Promise<User> {
     const response = await userApi.get<User>('/users/me');
-    return response.data;
+    return response.data as User;
   },
 
-  // Admin authentication
+  // 管理者ログイン
   async adminLogin(credentials: LoginFormData): Promise<LoginResponse> {
     const response = await adminApi.post<LoginResponse>('/auth/login', credentials);
-    this.setTokens(response.data.token, response.data.refreshToken);
-    return response.data;
+    const data = response.data as unknown as { user: Admin; accessToken: string };
+    localStorage.setItem('token', data.accessToken);
+    return { user: data.user, accessToken: data.accessToken };
   },
 
+  // 管理者ログアウト
   async adminLogout(): Promise<void> {
     try {
       await adminApi.post('/auth/logout');
@@ -60,20 +66,20 @@ export const authService = {
     }
   },
 
+  // ログイン中の管理者情報取得
   async getCurrentAdmin(): Promise<Admin> {
     const response = await adminApi.get<Admin>('/admins/me');
-    return response.data;
+    return response.data as Admin;
   },
 
-  // Token management
-  setTokens(token: string, refreshToken: string): void {
+  // トークン管理
+  setToken(token: string): void {
     localStorage.setItem('token', token);
-    localStorage.setItem('refreshToken', refreshToken);
   },
 
   clearTokens(): void {
     localStorage.removeItem('token');
-    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('isAdmin');
   },
 
   getToken(): string | null {

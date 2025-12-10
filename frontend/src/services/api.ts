@@ -1,7 +1,22 @@
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { ApiError } from '@types/index';
 
-// Base API client configuration
+// snake_case を camelCase に変換する関数（Railsのレスポンスをフロントで使いやすくする）
+const snakeToCamel = (obj: unknown): unknown => {
+  if (Array.isArray(obj)) {
+    return obj.map(snakeToCamel);
+  }
+  if (obj !== null && typeof obj === 'object') {
+    return Object.keys(obj as object).reduce((acc, key) => {
+      const camelKey = key.replace(/_([a-z])/g, (_, letter: string) => letter.toUpperCase());
+      (acc as Record<string, unknown>)[camelKey] = snakeToCamel((obj as Record<string, unknown>)[key]);
+      return acc;
+    }, {} as Record<string, unknown>);
+  }
+  return obj;
+};
+
+// APIクライアントの作成
 const createApiClient = (baseURL: string): AxiosInstance => {
   const client = axios.create({
     baseURL,
@@ -9,10 +24,10 @@ const createApiClient = (baseURL: string): AxiosInstance => {
     headers: {
       'Content-Type': 'application/json',
     },
-    withCredentials: true, // Include cookies for session management
+    withCredentials: true, // セッション管理のためCookieを送信
   });
 
-  // Request interceptor - add JWT token
+  // リクエストインターセプター: JWTトークンをヘッダーに付与
   client.interceptors.request.use(
     (config: InternalAxiosRequestConfig) => {
       const token = localStorage.getItem('token');
@@ -21,51 +36,54 @@ const createApiClient = (baseURL: string): AxiosInstance => {
       }
       return config;
     },
-    (error) => {
-      return Promise.reject(error);
-    }
+    (error) => Promise.reject(error)
   );
 
-  // Response interceptor - handle errors and token refresh
+  // レスポンスインターセプター: Rails形式のレスポンスを変換
   client.interceptors.response.use(
-    (response) => response,
-    async (error: AxiosError) => {
-      const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+    (response) => {
+      // snake_case → camelCase 変換
+      const data = snakeToCamel(response.data) as Record<string, unknown>;
 
-      // Handle 401 Unauthorized - token expired
-      if (error.response?.status === 401 && !originalRequest._retry) {
-        originalRequest._retry = true;
-
-        try {
-          // Attempt to refresh token
-          const refreshToken = localStorage.getItem('refreshToken');
-          if (refreshToken) {
-            const response = await axios.post(`${baseURL}/auth/refresh`, {
-              refreshToken,
-            });
-
-            const { token } = response.data;
-            localStorage.setItem('token', token);
-
-            // Retry original request with new token
-            if (originalRequest.headers) {
-              originalRequest.headers.Authorization = `Bearer ${token}`;
-            }
-            return client(originalRequest);
-          }
-        } catch (refreshError) {
-          // Refresh failed, clear tokens and redirect to login
-          localStorage.removeItem('token');
-          localStorage.removeItem('refreshToken');
-          window.location.href = '/login';
-          return Promise.reject(refreshError);
+      // Railsの { success, data, meta } 形式を変換
+      if (data && typeof data.success !== 'undefined') {
+        if (data.meta && typeof data.meta === 'object') {
+          // ページネーション付きレスポンス: { success, data: [], meta: {...} }
+          const meta = data.meta as Record<string, unknown>;
+          response.data = {
+            data: data.data,
+            pagination: {
+              total: meta.totalCount,
+              page: meta.currentPage,
+              perPage: meta.perPage,
+              totalPages: meta.totalPages,
+            },
+          };
+        } else if ('data' in data) {
+          // 通常レスポンス: { success, data: {...} }
+          response.data = data.data;
+        } else {
+          response.data = data;
         }
+      } else {
+        response.data = data;
       }
 
-      // Transform error to ApiError format
+      return response;
+    },
+    async (error: AxiosError) => {
+      // 401: 認証切れはトークンを削除してログインページへ
+      if (error.response?.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('isAdmin');
+        window.location.href = '/login';
+      }
+
+      // エラーをApiError形式に変換
+      const responseData = snakeToCamel(error.response?.data) as Record<string, unknown> | undefined;
       const apiError: ApiError = {
-        message: error.response?.data?.message || error.message || 'An unexpected error occurred',
-        errors: error.response?.data?.errors,
+        message: (responseData?.message as string) || error.message || 'エラーが発生しました',
+        errors: responseData?.errors as Record<string, string[]> | undefined,
         statusCode: error.response?.status || 500,
       };
 
@@ -76,16 +94,18 @@ const createApiClient = (baseURL: string): AxiosInstance => {
   return client;
 };
 
-// API clients for different backends
-export const userApi = createApiClient('/api/user');
+// ユーザー用APIクライアント (Rails: /api/v1)
+export const userApi = createApiClient('/api/v1');
+
+// 管理者用APIクライアント (Laravel: /api/admin → Viteプロキシで /api/v1/admin に書き換え)
 export const adminApi = createApiClient('/api/admin');
 
-// Helper function to handle API errors
+// APIエラーメッセージを取得するヘルパー
 export const handleApiError = (error: unknown): string => {
   if (typeof error === 'object' && error !== null && 'message' in error) {
     return (error as ApiError).message;
   }
-  return 'An unexpected error occurred';
+  return 'エラーが発生しました';
 };
 
 export default { userApi, adminApi };

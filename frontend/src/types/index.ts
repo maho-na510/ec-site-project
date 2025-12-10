@@ -1,17 +1,15 @@
-// Core domain types
+// ユーザー
 export interface User {
   id: number;
   name: string;
   email: string;
   address: string;
-  city: string;
-  state: string;
-  postalCode: string;
-  phoneNumber: string;
+  phone: string;
   createdAt: string;
   updatedAt: string;
 }
 
+// 管理者
 export interface Admin {
   id: number;
   name: string;
@@ -20,13 +18,14 @@ export interface Admin {
   updatedAt: string;
 }
 
+// 商品
 export interface Product {
   id: number;
   name: string;
   description: string;
   price: number;
   stockQuantity: number;
-  categoryId: number;
+  categoryId?: number;
   category?: Category;
   images: ProductImage[];
   isActive: boolean;
@@ -35,70 +34,71 @@ export interface Product {
   updatedAt: string;
 }
 
+// 商品画像
 export interface ProductImage {
   id: number;
-  productId: number;
   imageUrl: string;
   displayOrder: number;
-  createdAt: string;
 }
 
+// カテゴリー
 export interface Category {
   id: number;
   name: string;
   description?: string;
-  displayOrder: number;
   createdAt: string;
   updatedAt: string;
 }
 
+// カートアイテム
 export interface CartItem {
   id: number;
-  cartId: number;
   productId: number;
   product: Product;
   quantity: number;
-  createdAt: string;
-  updatedAt: string;
+  subtotal: number;
 }
 
+// カート
 export interface Cart {
   id: number;
-  userId: number;
   items: CartItem[];
+  totalAmount: number;
   createdAt: string;
   updatedAt: string;
 }
 
+// 注文
 export interface Order {
   id: number;
-  userId: number;
   orderNumber: string;
   totalAmount: number;
   status: OrderStatus;
   shippingAddress: string;
-  shippingCity: string;
-  shippingState: string;
-  shippingPostalCode: string;
   items: OrderItem[];
   payment?: Payment;
   createdAt: string;
   updatedAt: string;
 }
 
+// 注文アイテム
 export interface OrderItem {
   id: number;
-  orderId: number;
-  productId: number;
-  productName: string;
+  product?: {
+    id: number;
+    name: string;
+    price: number;
+    mainImage?: string;
+  };
+  productName?: string;
   quantity: number;
   unitPrice: number;
   subtotal: number;
 }
 
+// 支払い
 export interface Payment {
   id: number;
-  orderId: number;
   transactionId: string;
   amount: number;
   paymentMethod: PaymentMethod;
@@ -106,6 +106,7 @@ export interface Payment {
   createdAt: string;
 }
 
+// 在庫ログ
 export interface InventoryLog {
   id: number;
   productId: number;
@@ -117,7 +118,7 @@ export interface InventoryLog {
   createdAt: string;
 }
 
-// Enums
+// 注文ステータス
 export enum OrderStatus {
   PENDING = 'pending',
   PROCESSING = 'processing',
@@ -126,12 +127,14 @@ export enum OrderStatus {
   PAYMENT_FAILED = 'payment_failed',
 }
 
+// 支払い方法
 export enum PaymentMethod {
   CREDIT_CARD = 'credit_card',
   DEBIT_CARD = 'debit_card',
   PAYPAL = 'paypal',
 }
 
+// 支払いステータス
 export enum PaymentStatus {
   PENDING = 'pending',
   COMPLETED = 'completed',
@@ -139,6 +142,7 @@ export enum PaymentStatus {
   REFUNDED = 'refunded',
 }
 
+// 在庫操作タイプ
 export enum InventoryActionType {
   SALE = 'sale',
   RESTOCK = 'restock',
@@ -148,13 +152,14 @@ export enum InventoryActionType {
   INITIAL_STOCK = 'initial_stock',
 }
 
-// API Response types
+// APIレスポンス
 export interface ApiResponse<T> {
   data: T;
   message?: string;
   errors?: string[];
 }
 
+// ページネーション付きレスポンス
 export interface PaginatedResponse<T> {
   data: T[];
   pagination: {
@@ -165,31 +170,30 @@ export interface PaginatedResponse<T> {
   };
 }
 
+// ログインレスポンス
 export interface LoginResponse {
   user: User | Admin;
-  token: string;
-  refreshToken: string;
+  accessToken: string;
 }
 
-// Form types
+// ログインフォーム
 export interface LoginFormData {
   email: string;
   password: string;
   rememberMe?: boolean;
 }
 
+// 会員登録フォーム
 export interface RegisterFormData {
   name: string;
   email: string;
   password: string;
   passwordConfirmation: string;
   address: string;
-  city: string;
-  state: string;
-  postalCode: string;
-  phoneNumber: string;
+  phone: string;
 }
 
+// 商品フォーム
 export interface ProductFormData {
   name: string;
   description: string;
@@ -200,15 +204,13 @@ export interface ProductFormData {
   images?: File[];
 }
 
+// チェックアウトフォーム
 export interface CheckoutFormData {
   shippingAddress: string;
-  shippingCity: string;
-  shippingState: string;
-  shippingPostalCode: string;
   paymentMethod: PaymentMethod;
 }
 
-// Filter and sort types
+// 商品フィルター
 export interface ProductFilters {
   categoryId?: number;
   minPrice?: number;
@@ -219,13 +221,14 @@ export interface ProductFilters {
 
 export type ProductSortBy = 'price_asc' | 'price_desc' | 'newest' | 'name';
 
+// 商品一覧パラメーター
 export interface ProductListParams extends ProductFilters {
   page?: number;
   perPage?: number;
   sortBy?: ProductSortBy;
 }
 
-// Error types
+// APIエラー
 export interface ApiError {
   message: string;
   errors?: Record<string, string[]>;
