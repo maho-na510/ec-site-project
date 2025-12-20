@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider } from './contexts/AuthContext'
 import { CartProvider } from './contexts/CartContext'
 import MainLayout from './layouts/MainLayout'
+import AdminLayout from './layouts/AdminLayout'
 
 // Create a client
 const queryClient = new QueryClient({
@@ -15,7 +16,7 @@ const queryClient = new QueryClient({
   },
 })
 
-// Pages
+// User Pages
 import HomePage from './pages/HomePage'
 import ProductsPage from './pages/ProductsPage'
 import ProductDetailPage from './pages/ProductDetailPage'
@@ -25,7 +26,13 @@ import CartPage from './pages/CartPage'
 import CheckoutPage from './pages/CheckoutPage'
 import ProfilePage from './pages/ProfilePage'
 
-// Protected Route Component
+// Admin Pages
+import AdminLoginPage from './pages/admin/AdminLoginPage'
+import AdminDashboard from './pages/admin/AdminDashboard'
+import AdminProductsPage from './pages/admin/AdminProductsPage'
+import AdminProductFormPage from './pages/admin/AdminProductFormPage'
+import AdminInventoryPage from './pages/admin/AdminInventoryPage'
+
 import { useAuth } from './contexts/AuthContext'
 import { ReactNode } from 'react'
 
@@ -50,6 +57,24 @@ function ProtectedRoute({ children }: { children: ReactNode }) {
   return <>{children}</>
 }
 
+// 管理者専用ルート: 未ログインは /admin/login へ、一般ユーザーは / へリダイレクト
+function AdminRoute({ children }: { children: ReactNode }) {
+  const { isAuthenticated, isAdmin, isLoading } = useAuth()
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    )
+  }
+
+  if (!isAuthenticated) return <Navigate to="/admin/login" replace />
+  if (!isAdmin) return <Navigate to="/" replace />
+
+  return <AdminLayout>{children}</AdminLayout>
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -57,54 +82,36 @@ function App() {
         <AuthProvider>
           <CartProvider>
             <Routes>
-          <Route path="/" element={<MainLayout />}>
-            {/* Public Routes */}
-            <Route index element={<HomePage />} />
-            <Route path="products" element={<ProductsPage />} />
-            <Route path="products/:id" element={<ProductDetailPage />} />
-            <Route path="login" element={<LoginPage />} />
-            <Route path="register" element={<RegisterPage />} />
+              {/* ユーザー側ルート */}
+              <Route path="/" element={<MainLayout />}>
+                <Route index element={<HomePage />} />
+                <Route path="products" element={<ProductsPage />} />
+                <Route path="products/:id" element={<ProductDetailPage />} />
+                <Route path="login" element={<LoginPage />} />
+                <Route path="register" element={<RegisterPage />} />
+                <Route path="cart" element={<ProtectedRoute><CartPage /></ProtectedRoute>} />
+                <Route path="checkout" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
+                <Route path="profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+                <Route
+                  path="*"
+                  element={
+                    <div className="container mx-auto px-4 py-16 text-center">
+                      <h1 className="text-4xl font-bold text-gray-900 mb-4">404 - ページが見つかりません</h1>
+                      <p className="text-gray-600 mb-8">お探しのページは存在しません。</p>
+                      <a href="/" className="text-blue-600 hover:text-blue-700 font-medium">ホームに戻る</a>
+                    </div>
+                  }
+                />
+              </Route>
 
-            {/* Protected Routes */}
-            <Route
-              path="cart"
-              element={
-                <ProtectedRoute>
-                  <CartPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="checkout"
-              element={
-                <ProtectedRoute>
-                  <CheckoutPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="profile"
-              element={
-                <ProtectedRoute>
-                  <ProfilePage />
-                </ProtectedRoute>
-              }
-            />
-
-            {/* 404 Route */}
-            <Route
-              path="*"
-              element={
-                <div className="container mx-auto px-4 py-16 text-center">
-                  <h1 className="text-4xl font-bold text-gray-900 mb-4">404 - ページが見つかりません</h1>
-                  <p className="text-gray-600 mb-8">お探しのページは存在しません。</p>
-                  <a href="/" className="text-blue-600 hover:text-blue-700 font-medium">
-                    ホームに戻る
-                  </a>
-                </div>
-              }
-            />
-          </Route>
+              {/* 管理者側ルート */}
+              <Route path="/admin/login" element={<AdminLoginPage />} />
+              <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+              <Route path="/admin/dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+              <Route path="/admin/products" element={<AdminRoute><AdminProductsPage /></AdminRoute>} />
+              <Route path="/admin/products/new" element={<AdminRoute><AdminProductFormPage /></AdminRoute>} />
+              <Route path="/admin/products/:id/edit" element={<AdminRoute><AdminProductFormPage /></AdminRoute>} />
+              <Route path="/admin/inventory" element={<AdminRoute><AdminInventoryPage /></AdminRoute>} />
             </Routes>
           </CartProvider>
         </AuthProvider>

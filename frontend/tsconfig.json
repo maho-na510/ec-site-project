@@ -30,7 +30,7 @@
       "@contexts/*": ["./src/contexts/*"],
       "@services/*": ["./src/services/*"],
       "@utils/*": ["./src/utils/*"],
-      "@types/*": ["./src/types/*"]
+      "@app-types/*": ["./src/types/*"]
     },
 
     /* Additional options */

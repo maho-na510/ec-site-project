@@ -1,5 +1,5 @@
 import { adminApi } from './api';
-import { InventoryLog, InventoryActionType, PaginatedResponse } from '@types/index';
+import { InventoryLog, InventoryActionType, PaginatedResponse } from '@app-types/index';
 
 export interface InventoryAdjustmentData {
   productId: number;

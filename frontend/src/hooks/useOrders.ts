@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { orderService } from '@services/orderService';
-import { CheckoutFormData } from '@types/index';
+import { CheckoutFormData } from '@app-types/index';
 
 export const useOrders = (page = 1, perPage = 20) => {
   return useQuery({

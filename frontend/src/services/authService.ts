@@ -1,5 +1,5 @@
 import { userApi, adminApi } from './api';
-import { LoginFormData, RegisterFormData, LoginResponse, User, Admin } from '@types/index';
+import { LoginFormData, RegisterFormData, LoginResponse, User, Admin } from '@app-types/index';
 
 export const authService = {
   // ユーザーログイン
@@ -68,7 +68,7 @@ export const authService = {
 
   // ログイン中の管理者情報取得
   async getCurrentAdmin(): Promise<Admin> {
-    const response = await adminApi.get<Admin>('/admins/me');
+    const response = await adminApi.get<Admin>('/auth/me');
     return response.data as Admin;
   },
 
