@@ -1,0 +1,136 @@
+version: '3.8'
+
+services:
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: ec-site-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: ec_site_development
+      MYSQL_USER: ec_user
+      MYSQL_PASSWORD: ec_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - ec-site-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis for sessions and caching
+  redis:
+    image: redis:7-alpine
+    container_name: ec-site-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - ec-site-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # Rails API (User-facing backend)
+  rails-api:
+    build:
+      context: ./rails-api
+      dockerfile: Dockerfile
+    container_name: ec-site-rails
+    environment:
+      RAILS_ENV: development
+      DATABASE_HOST: mysql
+      DATABASE_PORT: 3306
+      DATABASE_NAME: ec_site_development
+      DATABASE_USER: ec_user
+      DATABASE_PASSWORD: ec_password
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: your-super-secret-jwt-key-change-in-production
+      FRONTEND_URL: http://localhost:5173
+    ports:
+      - "3001:3000"
+    volumes:
+      - ./rails-api:/app
+      - rails_bundle:/usr/local/bundle
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - ec-site-network
+    command: bash -c "rm -f tmp/pids/server.pid && bundle exec rails server -b 0.0.0.0"
+
+  # Laravel API (Admin backend)
+  laravel-api:
+    build:
+      context: ./laravel-api
+      dockerfile: Dockerfile
+    container_name: ec-site-laravel
+    environment:
+      APP_ENV: local
+      APP_DEBUG: "true"
+      DB_CONNECTION: mysql
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: ec_site_development
+      DB_USERNAME: ec_user
+      DB_PASSWORD: ec_password
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: your-super-secret-jwt-key-change-in-production
+      FRONTEND_URL: http://localhost:5173
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./laravel-api:/var/www/html
+      - laravel_vendor:/var/www/html/vendor
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - ec-site-network
+    command: php artisan serve --host=0.0.0.0 --port=8000
+
+  # React Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: ec-site-frontend
+    environment:
+      VITE_USER_API_URL: http://localhost:3001/api/v1
+      VITE_ADMIN_API_URL: http://localhost:8000/api/v1/admin
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - ec-site-network
+    command: npm run dev -- --host
+
+volumes:
+  mysql_data:
+    driver: local
+  redis_data:
+    driver: local
+  rails_bundle:
+    driver: local
+  laravel_vendor:
+    driver: local
+
+networks:
+  ec-site-network:
+    driver: bridge

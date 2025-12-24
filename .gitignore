@@ -1,0 +1,72 @@
+# OS Files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Dependencies
+node_modules/
+vendor/
+
+# Rails
+/rails-api/log/*
+/rails-api/tmp/*
+!/rails-api/log/.keep
+!/rails-api/tmp/.keep
+/rails-api/storage/*
+!/rails-api/storage/.keep
+/rails-api/.bundle
+/rails-api/config/master.key
+/rails-api/config/credentials/*.key
+
+# Laravel
+/laravel-api/vendor
+/laravel-api/node_modules
+/laravel-api/public/hot
+/laravel-api/public/storage
+/laravel-api/storage/*.key
+/laravel-api/.env
+/laravel-api/.env.backup
+/laravel-api/.env.production
+/laravel-api/.phpunit.result.cache
+/laravel-api/Homestead.json
+/laravel-api/Homestead.yaml
+/laravel-api/auth.json
+/laravel-api/npm-debug.log
+/laravel-api/yarn-error.log
+
+# React/Frontend
+/frontend/dist
+/frontend/build
+/frontend/.vite
+/frontend/coverage
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Docker
+docker-compose.override.yml
+
+# Database
+*.sql
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
