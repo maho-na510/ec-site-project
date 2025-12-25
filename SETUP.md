@@ -1,329 +1,138 @@
-# EC Site - Setup Guide
+# EC Site - セットアップガイド
 
-This guide will help you set up and run the EC Site application from scratch.
+このドキュメントでは、EC Siteプロジェクトのセットアップ方法を説明します。
 
-## Prerequisites
+## 前提条件
 
-Before you begin, ensure you have the following installed:
+以下のソフトウェアがインストールされている必要があります:
 
-- **Docker** >= 24.0
-- **docker-compose** >= 2.20
+- **Docker Desktop** 24.0以降
+- **Docker Compose** 2.20以降
 - **Git**
 
-That's it! All other dependencies (Ruby, PHP, Node.js, MySQL, Redis) run inside Docker containers.
+## クイックスタート
 
-## Quick Start
-
-### 1. Clone the Repository
+### 1. リポジトリのクローン
 
 ```bash
 git clone <repository-url>
 cd ec-site-project
 ```
 
-### 2. Environment Configuration
+### 2. 環境変数の設定
 
-Copy the environment template:
+プロジェクトには3つのサービスがあり、それぞれに環境変数が必要です:
 
 ```bash
+# ルートディレクトリの環境変数をコピー
 cp .env.example .env
+
+# Rails API の環境変数をコピー
+cp rails-api/.env.example rails-api/.env
+
+# Laravel API の環境変数をコピー
+cp laravel-api/.env.example laravel-api/.env
+
+# Frontend の環境変数をコピー
+cp frontend/.env.example frontend/.env
 ```
 
-The default values are configured for development. You can modify them if needed.
-
-### 3. Initial Setup
-
-Run the setup command (this may take 5-10 minutes on first run):
+### 3. Dockerコンテナの起動
 
 ```bash
-make setup
+# すべてのサービスを起動
+docker compose up -d
+
+# ログを確認
+docker compose logs -f
 ```
 
-This command will:
-- Build all Docker containers
-- Install Rails and Laravel dependencies
-- Create and migrate databases
-- Install frontend dependencies
-- Seed the database with sample data
-
-### 4. Start the Application
+### 4. データベースのセットアップ
 
 ```bash
-make start
+# Rails のデータベースを作成・マイグレーション・シード
+docker compose exec rails-api bundle exec rails db:create
+docker compose exec rails-api bundle exec rails db:migrate
+docker compose exec rails-api bundle exec rails db:seed
+
+# Laravel のシードを実行（テーブルはRailsで作成済み）
+docker compose exec laravel-api php artisan db:seed
 ```
 
-### 5. Access the Application
+### 5. アプリケーションへのアクセス
 
-Open your browser and navigate to:
+ブラウザで以下のURLにアクセス:
 
-- **User Interface**: http://localhost:5173
-- **Admin Interface**: http://localhost:5173/admin
+- **フロントエンド**: http://localhost:5173
 - **Rails API**: http://localhost:3001/api/v1
-- **Laravel API**: http://localhost:8000/api/v1/admin
+- **Laravel Admin API**: http://localhost:8000/api/v1/admin
 
-## Default Credentials
+## テストアカウント
 
-### User Account
-- Email: `user@example.com`
-- Password: `password123`
+### ユーザーアカウント（一般ユーザー）
 
-### Admin Account
-- Email: `admin@example.com`
-- Password: `admin123`
+- **Email**: test@example.com
+- **Password**: password123
 
-## Common Commands
+### 管理者アカウント
 
-### Container Management
+**メイン管理者**:
+- **Email**: admin@example.com
+- **Password**: admin123
 
-```bash
-# Start all containers
-make start
+**マネージャー**:
+- **Email**: manager@example.com
+- **Password**: manager123
 
-# Stop all containers
-make stop
+## よくある問題と解決方法
 
-# Restart all containers
-make restart
-
-# View logs
-make logs
-
-# Clean up (stop and remove volumes)
-make clean
-```
-
-### Database Management
+### ポートが既に使用されている
 
 ```bash
-# Run migrations
-make migrate
-
-# Seed database with sample data
-make seed
-
-# Reset database (drop, create, migrate, seed)
-make db-reset
-```
-
-### Testing
-
-```bash
-# Run all tests
-make test
-
-# Run specific test suites
-make test-rails      # Rails tests only
-make test-laravel    # Laravel tests only
-make test-frontend   # React tests only
-make test-e2e        # End-to-end tests only
-
-# Generate coverage reports
-make coverage
-```
-
-### Shell Access
-
-```bash
-# Rails console
-make shell-rails
-
-# Laravel shell
-make shell-laravel
-
-# Frontend shell
-make shell-frontend
-```
-
-## Troubleshooting
-
-### Port Already in Use
-
-If you see errors about ports already in use:
-
-```bash
-# Check what's using the ports
-lsof -i :3306  # MySQL
-lsof -i :6379  # Redis
+# 使用中のポートを確認
 lsof -i :3001  # Rails
 lsof -i :8000  # Laravel
 lsof -i :5173  # Frontend
-
-# Kill the process or change ports in docker-compose.yml
 ```
 
-### Database Connection Errors
+### データベース接続エラー
 
 ```bash
-# Ensure MySQL is healthy
-docker-compose ps
+# MySQLコンテナの状態を確認
+docker compose ps
 
-# If MySQL is unhealthy, try recreating it
-docker-compose down
-docker volume rm ec-site-project_mysql_data
-make setup
+# MySQLを再起動
+docker compose restart mysql
 ```
 
-### Permission Errors
-
-If you encounter permission errors with Docker:
+### TypeScriptがReactの型を見つけられない
 
 ```bash
-# Fix ownership
-sudo chown -R $USER:$USER .
-
-# Or run with sudo (not recommended)
-sudo make setup
+# コンテナからnode_modulesをローカルにコピー
+docker compose cp frontend:/app/node_modules ./frontend/
 ```
 
-### Redis Connection Errors
+## 開発用コマンド
 
 ```bash
-# Restart Redis
-docker-compose restart redis
+# すべてのサービスを起動
+docker compose up -d
 
-# Check Redis logs
-docker-compose logs redis
+# すべてのサービスを停止
+docker compose down
+
+# ログを表示
+docker compose logs -f
+
+# Railsコンソールを開く
+docker compose exec rails-api bundle exec rails console
+
+# Laravel artisanを実行
+docker compose exec laravel-api php artisan
 ```
 
-## Development Workflow
+詳細なAPI仕様は [README.md](README.md) を参照してください。
 
-### Making Code Changes
+---
 
-All code changes are automatically reflected in the running containers:
-
-- **Rails**: Auto-reloads on file changes
-- **Laravel**: Auto-reloads on file changes
-- **React**: Hot module replacement (HMR) - instant updates
-
-### Running Migrations
-
-After creating a new migration:
-
-```bash
-# Rails
-docker-compose run --rm rails-api bundle exec rails db:migrate
-
-# Laravel
-docker-compose run --rm laravel-api php artisan migrate
-```
-
-### Installing New Dependencies
-
-```bash
-# Rails (Gemfile)
-docker-compose run --rm rails-api bundle install
-
-# Laravel (composer.json)
-docker-compose run --rm laravel-api composer install
-
-# Frontend (package.json)
-docker-compose run --rm frontend npm install
-
-# Rebuild containers if needed
-make build
-```
-
-## Project Structure
-
-```
-ec-site-project/
-├── docs/                   # Documentation
-│   ├── ER_Diagram.md
-│   ├── Requirements_Definition.md
-│   ├── System_Design.md
-│   └── Component_Diagram.md
-├── rails-api/             # Rails backend (User API)
-│   ├── app/
-│   │   ├── controllers/
-│   │   ├── models/
-│   │   └── services/
-│   ├── config/
-│   ├── db/
-│   └── test/
-├── laravel-api/           # Laravel backend (Admin API)
-│   ├── app/
-│   │   ├── Http/Controllers/
-│   │   ├── Models/
-│   │   └── Services/
-│   ├── database/
-│   └── tests/
-├── frontend/              # React frontend
-│   ├── src/
-│   │   ├── components/
-│   │   ├── pages/
-│   │   ├── contexts/
-│   │   ├── hooks/
-│   │   └── services/
-│   └── tests/
-├── docker-compose.yml     # Docker orchestration
-├── Makefile              # Convenience commands
-└── README.md             # Project overview
-```
-
-## Testing
-
-The project follows a comprehensive testing strategy:
-
-### Small Tests (Unit)
-- **Rails**: `minitest` for models and services
-- **Laravel**: `phpunit` for models and services
-- **React**: `Jest` for components and hooks
-
-### Medium Tests (Integration)
-- API endpoint testing
-- Service integration tests
-
-### Big Tests (E2E)
-- **Cypress** for complete user workflows
-- Critical paths: registration → login → browse → checkout
-
-### Test Coverage
-
-Target coverage: **80%+**
-- Critical paths (checkout, payment): **95%+**
-- Services and models: **85%+**
-- Controllers: **75%+**
-
-## Performance Considerations
-
-The application implements several performance optimizations:
-
-1. **Database Indexing**: Foreign keys and common query patterns are indexed
-2. **Redis Caching**: Product lists cached with 5-minute TTL
-3. **Code Splitting**: React lazy loading for admin components
-4. **Image Optimization**: Lazy loading and responsive images
-5. **Connection Pooling**: Database connections pooled for efficiency
-
-## Security Features
-
-1. **JWT Authentication**: Short-lived access tokens with refresh rotation
-2. **HttpOnly Cookies**: Secure session storage
-3. **CORS Protection**: Restricted to frontend origin
-4. **Rate Limiting**: API endpoint protection
-5. **Password Security**: Bcrypt with cost factor 12
-6. **SQL Injection Prevention**: ORM with parameterized queries
-7. **XSS Prevention**: React auto-escaping and CSP headers
-
-## Deployment
-
-For production deployment:
-
-1. Update environment variables in `.env`
-2. Set `RAILS_ENV=production` and `APP_ENV=production`
-3. Generate new `JWT_SECRET` and `APP_KEY`
-4. Configure proper database credentials
-5. Enable HTTPS with SSL certificates
-6. Set up database backups
-7. Configure monitoring and logging
-
-Recommended platforms: AWS ECS, Google Cloud Run, or Kubernetes.
-
-## Getting Help
-
-- Check the [main README](README.md) for project overview
-- Review [System Design](docs/System_Design.md) for architecture details
-- Check [Requirements](docs/Requirements_Definition.md) for features
-
-## License
-
-This project is developed as an educational assignment.
+**最終更新日**: 2025-12-25

@@ -52,6 +52,7 @@ module RailsApi
 
     # Autoload paths
     config.autoload_paths += %W(#{config.root}/app/services)
+    config.autoload_paths += %W(#{config.root}/app/errors)
 
     # CORS configuration (see initializers/cors.rb)
     config.middleware.insert_before 0, Rack::Cors

@@ -30,7 +30,6 @@ module Api
         {
           id: category.id,
           name: category.name,
-          slug: category.slug,
           description: category.description,
           product_count: category.products.active.count,
           created_at: category.created_at
@@ -41,7 +40,6 @@ module Api
         {
           id: category.id,
           name: category.name,
-          slug: category.slug,
           description: category.description,
           product_count: category.products.active.count,
           created_at: category.created_at,

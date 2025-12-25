@@ -109,7 +109,6 @@ module Api
             {
               id: image.id,
               image_url: image.image_url,
-              alt_text: image.alt_text,
               display_order: image.display_order
             }
           end,
@@ -124,7 +123,7 @@ module Api
         {
           id: category.id,
           name: category.name,
-          slug: category.slug
+          description: category.description
         }
       end
 
