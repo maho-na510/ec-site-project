@@ -37,13 +37,19 @@ COPY docker/nginx.conf /etc/nginx/sites-available/default
 # Copy supervisor configuration
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-# Set permissions
-RUN chown -R www-data:www-data /var/www/html \
+# Create directories if they don't exist and set permissions
+RUN mkdir -p /var/www/html/storage/app/public \
+    /var/www/html/storage/framework/cache \
+    /var/www/html/storage/framework/sessions \
+    /var/www/html/storage/framework/views \
+    /var/www/html/storage/logs \
+    /var/www/html/bootstrap/cache \
+    && chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html/storage \
     && chmod -R 755 /var/www/html/bootstrap/cache
 
-# Install dependencies
-RUN composer install --no-dev --optimize-autoloader --no-interaction
+# Install dependencies (skip scripts during initial install)
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
 
 # Expose port 8000
 EXPOSE 8000

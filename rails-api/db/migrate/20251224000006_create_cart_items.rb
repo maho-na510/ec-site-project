@@ -9,6 +9,5 @@ class CreateCartItems < ActiveRecord::Migration[7.1]
     end
 
     add_index :cart_items, [:cart_id, :product_id], unique: true
-    add_index :cart_items, :product_id
   end
 end

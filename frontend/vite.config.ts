@@ -21,13 +21,13 @@ export default defineConfig({
     port: 5173,
     host: true,
     proxy: {
-      '/api/user': {
-        target: process.env.VITE_USER_API_URL || 'http://localhost:3000',
+      '/api/v1': {
+        target: process.env.VITE_USER_API_URL || 'http://127.0.0.1:3001',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/user/, '/api/v1'),
+        secure: false,
       },
       '/api/admin': {
-        target: process.env.VITE_ADMIN_API_URL || 'http://localhost:8000',
+        target: process.env.VITE_ADMIN_API_URL || 'http://127.0.0.1:8000',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api\/admin/, '/api/v1/admin'),
       },

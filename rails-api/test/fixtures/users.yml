@@ -1,0 +1,19 @@
+one:
+  name: Test User
+  email: test@example.com
+  password_digest: <%= BCrypt::Password.create('password123', cost: 4) %>
+  address: 123 Test Street, Test City, TS 12345
+  deleted_at: null
+
+two:
+  name: Another User
+  email: another@example.com
+  password_digest: <%= BCrypt::Password.create('password123', cost: 4) %>
+  address: 456 Another St, Test City, TS 54321
+  deleted_at: null
+
+deleted:
+  name: Deleted User
+  email: deleted@example.com
+  password_digest: <%= BCrypt::Password.create('password123', cost: 4) %>
+  deleted_at: <%= 1.day.ago %>

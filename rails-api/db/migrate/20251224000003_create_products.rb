@@ -13,7 +13,6 @@ class CreateProducts < ActiveRecord::Migration[7.1]
       t.datetime :deleted_at
     end
 
-    add_index :products, :category_id
     add_index :products, :name
     add_index :products, [:is_active, :is_suspended]
     add_index :products, :deleted_at
