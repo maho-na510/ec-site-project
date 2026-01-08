@@ -1,5 +1,8 @@
 module Api
   module V1
+    # 注文コントローラー
+    # 注意：order_items テーブルの価格カラムは unit_price ではなく price_at_purchase
+    # マイグレーションファイルでカラム名を確認しないとハマる（自分がハマった）
     class OrdersController < ApplicationController
       before_action :set_order, only: [:show, :cancel]
 
@@ -52,11 +55,10 @@ module Api
           return
         end
 
-        result = OrderProcessingService.new(
-          cart: cart,
+        result = OrderProcessingService.new(current_user, {
           shipping_address: params[:shipping_address],
           payment_method: params[:payment_method] || 'credit_card'
-        ).execute
+        }).execute
 
         if result[:success]
           render json: {
@@ -154,7 +156,7 @@ module Api
             main_image: item.product.product_images.first&.image_url
           },
           quantity: item.quantity,
-          unit_price: item.unit_price.to_f,
+          unit_price: item.price_at_purchase.to_f,  # カラム名はprice_at_purchase（ここつまづいた）
           subtotal: item.subtotal.to_f
         }
       end

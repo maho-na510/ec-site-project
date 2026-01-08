@@ -62,15 +62,20 @@ class OrderProcessingService
   private
 
   # Lock products and validate stock (prevents concurrent modifications)
+  # FOR UPDATE でDB行ロックを取得し、他トランザクションが同じ商品を同時変更できないようにする
   def lock_and_validate_inventory
+    @locked_products = {}
     @cart.cart_items.each do |item|
-      # Use pessimistic locking (FOR UPDATE) to prevent concurrent modifications
+      # SELECT FOR UPDATE: このトランザクションが終わるまで他トランザクションはこの行を変更できない
       product = Product.lock('FOR UPDATE').find(item.product_id)
 
       unless product.sufficient_stock?(item.quantity)
         raise InsufficientStockError,
               "Insufficient stock for #{product.name}. Only #{product.stock_quantity} available."
       end
+
+      # ロック済みオブジェクトをキャッシュ（後でARクエリキャッシュを経由しないように）
+      @locked_products[item.product_id] = product
     end
   end
 
@@ -84,10 +89,12 @@ class OrderProcessingService
 
     # Create order items from cart items
     @cart.cart_items.each do |cart_item|
+      # ロック済み商品から価格を取得（ここで最新価格を固定する）
+      product = @locked_products[cart_item.product_id] || cart_item.product
       order.order_items.build(
-        product: cart_item.product,
+        product: product,
         quantity: cart_item.quantity,
-        price_at_purchase: cart_item.product.price
+        price_at_purchase: product.price
       )
     end
 
@@ -98,10 +105,19 @@ class OrderProcessingService
   # Deduct inventory for ordered items
   def deduct_inventory(order)
     order.order_items.each do |item|
-      product = item.product
+      # ロック済みオブジェクトを使い、ARクエリキャッシュの古い値を避ける
+      product = @locked_products[item.product_id]
 
-      # Deduct stock
-      product.deduct_stock!(item.quantity)
+      # SQLレベルのアトミックデクリメント（FOR UPDATEに加えた二重保護）
+      # stock_quantity >= quantity の条件を満たす行のみ更新し、更新行数で成否を判定
+      rows_updated = Product.where(id: product.id)
+                            .where('stock_quantity >= ?', item.quantity)
+                            .update_all("stock_quantity = stock_quantity - #{item.quantity.to_i}")
+
+      if rows_updated == 0
+        raise InsufficientStockError,
+              "Insufficient stock for #{product.name} (concurrent order may have taken the last item)"
+      end
 
       Rails.logger.info "Deducted #{item.quantity} units of product #{product.id} (#{product.name})"
     end

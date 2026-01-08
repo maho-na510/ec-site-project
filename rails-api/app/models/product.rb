@@ -39,11 +39,20 @@ class Product < ApplicationRecord
     stock_quantity >= quantity
   end
 
-  # Deduct stock (use within transaction with lock)
+  # Deduct stock (use within transaction with FOR UPDATE lock)
+  # SQLレベルのアトミックデクリメント: stock_quantity >= quantity の条件付きUPDATE
+  # Ruby演算（stock_quantity - quantity）ではなく、DB側で計算することで競合を防ぐ
   def deduct_stock!(quantity)
-    raise InsufficientStockError, "Insufficient stock for #{name}" unless sufficient_stock?(quantity)
+    rows_updated = self.class.where(id: id)
+                             .where('stock_quantity >= ?', quantity)
+                             .update_all("stock_quantity = stock_quantity - #{quantity.to_i}")
 
-    update!(stock_quantity: stock_quantity - quantity)
+    if rows_updated == 0
+      reload  # 最新のstock_quantityを取得してエラーメッセージに使う
+      raise InsufficientStockError, "Insufficient stock for #{name}. Available: #{stock_quantity}"
+    end
+
+    reload  # インスタンスを最新状態に更新
   end
 
   # Add stock

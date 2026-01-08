@@ -1,10 +1,18 @@
-# User model - represents customer accounts
+# ユーザーモデル - お客さんのアカウントを表す
+# 注意点：
+#   - has_secure_password を使うと password= と authenticate() が自動で使えるようになる
+#   - パスワードの最小文字数は 6 にした（テストとフロントエンドと合わせること！）
+#     最初 8 にしていたが、テストで「minimum is 6」というエラーが出て気づいた
+#   - has_many :cart_items, through: :carts は必須！
+#     user.cart_items と書けるようにするためにこのアソシエーションが必要
+#     最初に書き忘れてテストが NoMethodError になった
 class User < ApplicationRecord
-  # Secure password handling
+  # has_secure_password で password のバリデーションと認証が使えるようになる
   has_secure_password
 
-  # Associations
+  # アソシエーション
   has_many :carts, dependent: :destroy
+  has_many :cart_items, through: :carts  # カートを経由してアイテムにアクセスできる
   has_many :orders, dependent: :destroy
   has_many :password_reset_tokens, dependent: :destroy
 
@@ -13,7 +21,7 @@ class User < ApplicationRecord
   validates :email, presence: true,
                     uniqueness: { case_sensitive: false },
                     format: { with: URI::MailTo::EMAIL_REGEXP }
-  validates :password, length: { minimum: 8 }, if: -> { password.present? }
+  validates :password, length: { minimum: 6 }, if: -> { password.present? }
   validates :phone, format: { with: /\A[\d\s\-\(\)\+]+\z/, message: "only allows numbers, spaces, and dashes" },
                     allow_blank: true
 
