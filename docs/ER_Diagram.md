@@ -1,43 +1,52 @@
-# ER Diagram - EC Site Application
+# ER図
 
-## Entity Relationship Diagram
+## テーブルの関係図
 
 ```mermaid
 erDiagram
-    users ||--o{ carts : has
-    users ||--o{ orders : places
-    users ||--o{ password_reset_tokens : has
+    users ||--o{ carts : "持つ"
+    users ||--o{ orders : "注文する"
+    users ||--o{ password_reset_tokens : "持つ"
 
-    products ||--o{ cart_items : contains
-    products ||--o{ order_items : contains
-    products ||--o{ product_images : has
-    products }o--|| categories : belongs_to
+    carts ||--o{ cart_items : "含む"
+    cart_items }o--|| products : "参照"
 
-    carts ||--o{ cart_items : contains
+    orders ||--o{ order_items : "含む"
+    orders ||--o| payments : "持つ"
+    order_items }o--|| products : "参照"
 
-    orders ||--o{ order_items : contains
-    orders ||--|| payments : has
+    products }o--|| categories : "属する"
+    products ||--o{ product_images : "持つ"
+    products ||--o{ inventory_logs : "記録される"
 
-    admins ||--o{ products : manages
-    admins ||--o{ inventory_logs : creates
+    admins ||--o{ products : "登録する"
+    admins ||--o{ inventory_logs : "操作する"
 
     users {
         bigint id PK
         string name
-        string email UK
+        string email
         string password_digest
         text address
         string phone
+        datetime deleted_at
         datetime created_at
         datetime updated_at
-        datetime deleted_at
     }
 
-    admins {
+    carts {
         bigint id PK
-        string name
-        string email UK
-        string password_digest
+        bigint user_id FK
+        datetime checked_out_at
+        datetime created_at
+        datetime updated_at
+    }
+
+    cart_items {
+        bigint id PK
+        bigint cart_id FK
+        bigint product_id FK
+        integer quantity
         datetime created_at
         datetime updated_at
     }
@@ -52,9 +61,9 @@ erDiagram
         integer stock_quantity
         boolean is_active
         boolean is_suspended
+        datetime deleted_at
         datetime created_at
         datetime updated_at
-        datetime deleted_at
     }
 
     categories {
@@ -74,26 +83,10 @@ erDiagram
         datetime updated_at
     }
 
-    carts {
-        bigint id PK
-        bigint user_id FK
-        datetime created_at
-        datetime updated_at
-    }
-
-    cart_items {
-        bigint id PK
-        bigint cart_id FK
-        bigint product_id FK
-        integer quantity
-        datetime created_at
-        datetime updated_at
-    }
-
     orders {
         bigint id PK
         bigint user_id FK
-        string order_number UK
+        string order_number
         decimal total_amount
         string status
         text shipping_address
@@ -122,12 +115,13 @@ erDiagram
         datetime updated_at
     }
 
-    password_reset_tokens {
+    admins {
         bigint id PK
-        bigint user_id FK
-        string token UK
-        datetime expires_at
+        string name
+        string email
+        string password
         datetime created_at
+        datetime updated_at
     }
 
     inventory_logs {
@@ -140,112 +134,42 @@ erDiagram
         text notes
         datetime created_at
     }
+
+    password_reset_tokens {
+        bigint id PK
+        bigint user_id FK
+        string token
+        datetime expires_at
+        datetime created_at
+    }
 ```
 
-## Entity Descriptions
+---
 
-### Users
-Represents customer accounts in the system.
-- **Key fields**: email (unique identifier for login), password_digest (hashed password)
-- **Soft delete**: Uses deleted_at for account deactivation
-- **Relationships**: Can have multiple carts (historical), orders, and password reset tokens
+## 設計で悩んだところ・メモ
 
-### Admins
-Represents administrative users who manage products and inventory.
-- **Separation rationale**: Separate table from users for security isolation and different permission models
-- **Relationships**: Manages products and creates inventory audit logs
+### カートと注文を別テーブルにした理由
 
-### Products
-Core entity representing items for sale.
-- **Stock management**: stock_quantity tracks available inventory
-- **Status flags**:
-  - is_active: Product exists in the system
-  - is_suspended: Temporarily unavailable for purchase (admin can toggle)
-- **Soft delete**: Uses deleted_at for product archival
-- **Relationships**: Belongs to category, has multiple images, appears in carts and orders
+最初はカートと注文を同じテーブルで管理しようとしたのですが、
+チェックアウト前と後で状態が全然違うので別々にしました。
 
-### Categories
-Organizes products into logical groups.
-- **Purpose**: Enables product filtering and navigation
-- **Design note**: Simple one-level hierarchy; can be extended to nested categories if needed
+`carts` → `checked_out_at` がnullなら「まだカートに入ってる状態」
+チェックアウトすると `orders` と `order_items` に内容がコピーされます。
 
-### Product Images
-Stores multiple images per product.
-- **display_order**: Controls image sequence in product details
-- **Design note**: Stores URLs rather than binary data for scalability
+### price_at_purchase について
 
-### Carts
-Shopping cart for each user session.
-- **Persistence**: Carts persist between sessions for better UX
-- **Relationships**: Contains multiple cart_items
+`order_items` に `price_at_purchase`（購入時の価格）カラムを持たせています。
+これは注文した後に商品の価格が変わっても、注文時の価格が残るようにするためです。
+最初 `unit_price` という名前にしていたらテストが全部落ちて、しばらく理由がわかりませんでした…
 
-### Cart Items
-Individual products added to a cart.
-- **Quantity tracking**: Number of units for each product
-- **Design note**: Separate entity to normalize data and handle multiple products
+### ソフトデリート（deleted_at）
 
-### Orders
-Completed purchase records.
-- **order_number**: Human-readable unique identifier
-- **status**: Tracks order lifecycle (pending, processing, shipped, completed, cancelled)
-- **Snapshot data**: shipping_address captured at order time
-- **Relationships**: Contains order_items and has one payment
+`users` と `products` は実際には消さずに `deleted_at` に日時を入れる方法にしました。
+本当に消すと、その人の注文履歴とかが壊れてしまうので。
+調べたら「ソフトデリート」という名前のよくある設計パターンらしいです。
 
-### Order Items
-Individual products within an order.
-- **price_at_purchase**: Historical price snapshot (products prices may change over time)
-- **Design rationale**: Separates order from product to maintain historical accuracy
+### inventory_logs テーブル
 
-### Payments
-Payment transaction records.
-- **status**: Tracks payment state (pending, completed, failed, refunded)
-- **transaction_id**: External payment gateway reference
-- **Design note**: Mock implementation; ready for payment gateway integration
-
-### Password Reset Tokens
-Manages password reset workflow.
-- **expires_at**: Token validity period (typically 1-24 hours)
-- **Security**: One-time use tokens, deleted after use
-
-### Inventory Logs
-Audit trail for inventory changes.
-- **action_type**: Type of change (restock, sale, adjustment, return)
-- **Traceability**: Links changes to specific admins
-- **Purpose**: Compliance and debugging inventory discrepancies
-
-## Design Decisions
-
-### Database Constraints
-- **Foreign Keys**: All FK relationships have database-level constraints for referential integrity
-- **Unique Indexes**: email fields, order_number, reset tokens
-- **Null Constraints**: Critical fields like email, password_digest are NOT NULL
-
-### Concurrency Handling
-Products table will use optimistic locking (version column) or database row-level locking for concurrent purchase scenarios.
-
-### Performance Considerations
-- **Indexes**:
-  - All FK columns
-  - email columns (login queries)
-  - order_number (order lookup)
-  - product.is_active and is_suspended (filtering)
-  - created_at columns (time-based queries)
-
-### Data Integrity
-- **Soft Deletes**: users and products use soft deletes to maintain referential integrity in historical orders
-- **Price Snapshots**: order_items stores price_at_purchase to preserve historical accuracy
-- **Audit Trail**: inventory_logs provides complete change history
-
-## Schema Normalization
-The schema follows 3NF (Third Normal Form):
-- No transitive dependencies
-- Each table has a single primary key
-- Repeating groups are eliminated (cart_items, order_items)
-
-## Future Extensibility
-The design supports future enhancements:
-- Product variants (size, color) - can add product_variants table
-- User reviews - can add reviews table
-- Wishlist - similar structure to carts
-- Multiple shipping addresses - can add user_addresses table
-- Discount codes - can add promotions table
+在庫が増えたり減ったりした履歴を全部残しています。
+「誰が」「いつ」「何個変えたか」が分かるようにするためです。
+`action_type` には `restock`（入荷）・`sale`（売れた）・`adjustment`（手動調整）などが入ります。
