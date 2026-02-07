@@ -1,13 +1,12 @@
 import { format, formatDistance, parseISO } from 'date-fns';
 
-/**
- * 金額を日本円でフォーマット
- */
-export const formatCurrency = (amount: number, currency = 'JPY'): string => {
-  return new Intl.NumberFormat('ja-JP', {
-    style: 'currency',
-    currency,
-  }).format(amount);
+// 金額を日本円でフォーマットする
+// 注意：Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }) を最初使ったら
+// 全角の「￥」(U+FFE5) が出力されて、テストの「¥」(U+00A5 半角) と一致しなかった
+// 見た目は同じなのに文字コードが違う……ここで1時間くらい詰まった
+// テンプレートリテラルで手動で「¥」をつけることで解決した
+export const formatCurrency = (amount: number): string => {
+  return `¥${Math.round(amount).toLocaleString('ja-JP')}`;
 };
 
 /**

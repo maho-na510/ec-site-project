@@ -1,14 +1,16 @@
+# カートアイテムのフィクスチャ
+# cart_id を参照する（userではなくcart！ここでハマった）
 one:
-  user: one
+  cart: one
   product: one
   quantity: 2
 
 two:
-  user: one
+  cart: one
   product: two
   quantity: 1
 
 three:
-  user: two
+  cart: two
   product: three
   quantity: 3

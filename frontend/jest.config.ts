@@ -33,7 +33,7 @@ const config: Config = {
     '!src/main.tsx',
     '!src/vite-env.d.ts',
   ],
-  coverageThresholds: {
+  coverageThreshold: {
     global: {
       branches: 70,
       functions: 70,

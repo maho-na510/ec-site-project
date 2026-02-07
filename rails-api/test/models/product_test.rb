@@ -118,4 +118,40 @@ class ProductTest < ActiveSupport::TestCase
     products = Product.by_category(@category.id)
     assert products.all? { |p| p.category_id == @category.id }
   end
+
+  # --- deduct_stock! / 排他制御 ---
+
+  test "deduct_stock! reduces stock_quantity" do
+    @product.update!(stock_quantity: 10)
+    @product.deduct_stock!(3)
+    assert_equal 7, @product.reload.stock_quantity
+  end
+
+  test "deduct_stock! raises InsufficientStockError when stock is zero" do
+    @product.update!(stock_quantity: 0)
+    assert_raises(InsufficientStockError) { @product.deduct_stock!(1) }
+  end
+
+  test "deduct_stock! raises InsufficientStockError when quantity exceeds stock" do
+    @product.update!(stock_quantity: 2)
+    assert_raises(InsufficientStockError) { @product.deduct_stock!(3) }
+  end
+
+  # 同時購入シミュレーション: 在庫1個に対して2回のdeduct_stock!を呼ぶと2回目は失敗する
+  test "deduct_stock! prevents overselling when stock is exactly 1" do
+    @product.update!(stock_quantity: 1)
+
+    # 1回目は成功
+    @product.deduct_stock!(1)
+    assert_equal 0, @product.reload.stock_quantity
+
+    # 2回目は在庫切れでエラー（同時購入の2番手は失敗すべき）
+    assert_raises(InsufficientStockError) { @product.deduct_stock!(1) }
+  end
+
+  test "add_stock! increases stock_quantity" do
+    original = @product.stock_quantity
+    @product.add_stock!(5)
+    assert_equal original + 5, @product.reload.stock_quantity
+  end
 end

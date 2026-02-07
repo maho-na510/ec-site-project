@@ -1,19 +1,23 @@
 require "test_helper"
 
+# 認証コントローラーのテスト
+# ここで詰まった：最初 params: { user: { name:, email:, ... } } とネストして送ったが
+# コントローラーは params.require(:name) のようにフラットに受け取っていた
+# Railsの params.permit はネスト構造に気をつけないといけない
 class Api::V1::AuthControllerTest < ActionDispatch::IntegrationTest
   setup do
     @user = users(:one)
   end
 
+  # 新規ユーザー登録のテスト
+  # paramsはフラットに送る（userネストは不要だった）
   test "should register new user" do
     assert_difference('User.count', 1) do
       post api_v1_auth_register_url, params: {
-        user: {
-          name: 'New User',
-          email: 'newuser@example.com',
-          password: 'password123',
-          password_confirmation: 'password123'
-        }
+        name: 'New User',
+        email: 'newuser@example.com',
+        password: 'password123',
+        password_confirmation: 'password123'
       }, as: :json
     end
 
@@ -26,12 +30,10 @@ class Api::V1::AuthControllerTest < ActionDispatch::IntegrationTest
   test "should not register user with invalid email" do
     assert_no_difference('User.count') do
       post api_v1_auth_register_url, params: {
-        user: {
-          name: 'New User',
-          email: '',
-          password: 'password123',
-          password_confirmation: 'password123'
-        }
+        name: 'New User',
+        email: '',
+        password: 'password123',
+        password_confirmation: 'password123'
       }, as: :json
     end
 
@@ -68,6 +70,7 @@ class Api::V1::AuthControllerTest < ActionDispatch::IntegrationTest
     assert json_response['success']
   end
 
+  # トークンリフレッシュ（アクセストークンで新しいトークンを発行する）
   test "should refresh token" do
     post api_v1_auth_refresh_url, headers: auth_headers(@user), as: :json
 

@@ -1,0 +1,38 @@
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "name": "テスト商品A",
+      "description": "テスト用の商品です",
+      "price": 1000,
+      "stock_quantity": 10,
+      "is_active": true,
+      "category": { "id": 1, "name": "テストカテゴリ" }
+    },
+    {
+      "id": 2,
+      "name": "テスト商品B",
+      "description": "テスト用の商品その2",
+      "price": 2500,
+      "stock_quantity": 5,
+      "is_active": true,
+      "category": { "id": 1, "name": "テストカテゴリ" }
+    },
+    {
+      "id": 3,
+      "name": "セール品",
+      "description": "お得な商品",
+      "price": 500,
+      "stock_quantity": 20,
+      "is_active": true,
+      "category": { "id": 2, "name": "セールカテゴリ" }
+    }
+  ],
+  "pagination": {
+    "current_page": 1,
+    "last_page": 1,
+    "per_page": 12,
+    "total": 3
+  }
+}
