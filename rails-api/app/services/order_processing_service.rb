@@ -1,4 +1,4 @@
-# OrderProcessingService - handles order creation with pessimistic locking for concurrency
+# 注文処理サービス - 在庫の同時購入を防ぐためにトランザクションとロックを使う
 class OrderProcessingService
   def initialize(user, params)
     @user = user
@@ -6,41 +6,39 @@ class OrderProcessingService
     @cart = user.active_cart
   end
 
-  # Execute order processing
   def execute
-    # Validate cart
+    # カートのバリデーション
     validation = CartService.new(@user).validate_cart
     unless validation[:valid]
       return { success: false, error: validation[:error] }
     end
 
-    # Validate shipping address
+    # 配送先住所のチェック
     unless @params[:shipping_address].present?
       return { success: false, error: 'Shipping address is required' }
     end
 
-    # Process order within transaction with pessimistic locking
     begin
       order = nil
 
       ActiveRecord::Base.transaction do
-        # Step 1: Lock and validate inventory
+        # 1. 在庫をロックして確認
         lock_and_validate_inventory
 
-        # Step 2: Create order
+        # 2. 注文レコードを作成
         order = create_order
 
-        # Step 3: Deduct inventory
+        # 3. 在庫を減らす
         deduct_inventory(order)
 
-        # Step 4: Process payment
+        # 4. 決済処理
         process_payment(order)
 
-        # Step 5: Clear cart
+        # 5. カートをクリア
         @cart.checkout!
       end
 
-      # Step 6: Background jobs (outside transaction)
+      # トランザクション外でメール送信などを行う（今回はコメントアウト）
       # send_confirmation_email(order)
 
       {
@@ -61,12 +59,10 @@ class OrderProcessingService
 
   private
 
-  # Lock products and validate stock (prevents concurrent modifications)
-  # FOR UPDATE でDB行ロックを取得し、他トランザクションが同じ商品を同時変更できないようにする
+  # 在庫をロックして確認する（FOR UPDATEで同時に別の注文が来ても上書きされないようにする）
   def lock_and_validate_inventory
     @locked_products = {}
     @cart.cart_items.each do |item|
-      # SELECT FOR UPDATE: このトランザクションが終わるまで他トランザクションはこの行を変更できない
       product = Product.lock('FOR UPDATE').find(item.product_id)
 
       unless product.sufficient_stock?(item.quantity)
@@ -79,7 +75,7 @@ class OrderProcessingService
     end
   end
 
-  # Create order record
+  # 注文レコードを作成する
   def create_order
     order = Order.new(
       user: @user,
@@ -102,14 +98,13 @@ class OrderProcessingService
     order
   end
 
-  # Deduct inventory for ordered items
+  # 在庫を減らす
   def deduct_inventory(order)
     order.order_items.each do |item|
       # ロック済みオブジェクトを使い、ARクエリキャッシュの古い値を避ける
       product = @locked_products[item.product_id]
 
-      # SQLレベルのアトミックデクリメント（FOR UPDATEに加えた二重保護）
-      # stock_quantity >= quantity の条件を満たす行のみ更新し、更新行数で成否を判定
+      # SQLで直接デクリメント（在庫が足りる場合だけ更新される）
       rows_updated = Product.where(id: product.id)
                             .where('stock_quantity >= ?', item.quantity)
                             .update_all("stock_quantity = stock_quantity - #{item.quantity.to_i}")
@@ -123,7 +118,7 @@ class OrderProcessingService
     end
   end
 
-  # Process payment (mocked)
+  # 決済処理（今回はモック）
   def process_payment(order)
     payment_method = @params[:payment_method] || 'credit_card'
 
@@ -131,7 +126,6 @@ class OrderProcessingService
       raise ArgumentError, 'Invalid payment method'
     end
 
-    # Create payment record
     payment = Payment.new(
       order: order,
       payment_method: payment_method,
@@ -139,8 +133,6 @@ class OrderProcessingService
       status: 'pending'
     )
 
-    # Mock payment processing
-    # In production, integrate with real payment gateway
     payment_result = PaymentService.process_payment(payment)
 
     if payment_result[:success]
@@ -154,9 +146,8 @@ class OrderProcessingService
     payment
   end
 
-  # Send order confirmation email (placeholder for background job)
   def send_confirmation_email(order)
-    # In production, use background job (Sidekiq, etc.)
+    # 本来はバックグラウンドジョブで送る
     # OrderMailer.confirmation(order).deliver_later
     Rails.logger.info "Order confirmation email sent for order #{order.order_number}"
   end
