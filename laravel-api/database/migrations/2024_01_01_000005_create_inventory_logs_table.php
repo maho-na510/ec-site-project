@@ -16,8 +16,8 @@ return new class extends Migration
         }
         Schema::create('inventory_logs', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('product_id')->constrained()->onDelete('cascade');
-            $table->foreignId('admin_id')->nullable()->constrained()->onDelete('set null');
+            $table->bigInteger('product_id');
+            $table->bigInteger('admin_id')->nullable();
             $table->integer('quantity_before');
             $table->integer('quantity_after');
             $table->string('action_type'); // restock, sale, adjustment, return, initial_stock
