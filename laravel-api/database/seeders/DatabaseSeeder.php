@@ -66,7 +66,6 @@ class DatabaseSeeder extends Seeder
                     'product_id' => $product->id,
                     'admin_id' => $admin1->id,
                     'action_type' => 'adjustment',
-                    'quantity_change' => 10,
                     'quantity_before' => $product->stock_quantity - 10,
                     'quantity_after' => $product->stock_quantity,
                     'notes' => 'Initial stock adjustment',
