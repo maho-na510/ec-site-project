@@ -1,10 +1,7 @@
-# Rails Database Seeds
-# This file creates sample data for development and testing
+puts "🌱 シードデータの投入を開始します..."
 
-puts "🌱 Starting database seed..."
-
-# Clear existing data
-puts "Clearing existing data..."
+# 既存データを削除
+puts "既存データを削除中..."
 OrderItem.destroy_all
 Order.destroy_all
 Payment.destroy_all
@@ -15,89 +12,89 @@ Product.destroy_all
 Category.destroy_all
 User.destroy_all
 
-puts "✅ Existing data cleared"
+puts "✅ 既存データを削除しました"
 
-# Create Users
-puts "Creating users..."
+# ユーザーを作成
+puts "ユーザーを作成中..."
 users = []
 
 users << User.create!(
-  name: 'John Doe',
+  name: '田中 太郎',
   email: 'user@example.com',
   password: 'password123',
   password_confirmation: 'password123',
-  address: '123 Main Street, Tokyo, Japan 100-0001'
+  address: '東京都渋谷区神南1-1-1'
 )
 
 users << User.create!(
-  name: 'Jane Smith',
+  name: '鈴木 花子',
   email: 'jane@example.com',
   password: 'password123',
   password_confirmation: 'password123',
-  address: '456 Sakura Avenue, Osaka, Japan 530-0001'
+  address: '大阪府大阪市北区梅田2-2-2'
 )
 
 users << User.create!(
-  name: 'Test User',
+  name: 'テスト ユーザー',
   email: 'test@example.com',
   password: 'password123',
   password_confirmation: 'password123',
-  address: '789 Test Road, Kyoto, Japan 600-0000'
+  address: '京都府京都市中京区三条通3-3-3'
 )
 
-puts "✅ Created #{users.count} users"
+puts "✅ ユーザーを#{users.count}件作成しました"
 
-# Create Categories
-puts "Creating categories..."
+# カテゴリを作成
+puts "カテゴリを作成中..."
 categories = {}
 
 categories[:electronics] = Category.create!(
-  name: 'Electronics',
-  description: 'Electronic devices, gadgets, and accessories'
+  name: '家電・スマートフォン',
+  description: 'スマートフォン、タブレット、家電製品など'
 )
 
 categories[:computers] = Category.create!(
-  name: 'Computers & Laptops',
-  description: 'Desktop computers, laptops, and computer accessories'
+  name: 'パソコン・周辺機器',
+  description: 'ノートPC、デスクトップ、キーボード、マウスなど'
 )
 
 categories[:audio] = Category.create!(
-  name: 'Audio & Headphones',
-  description: 'Headphones, speakers, and audio equipment'
+  name: 'イヤホン・スピーカー',
+  description: 'ワイヤレスイヤホン、ヘッドホン、スピーカーなど'
 )
 
 categories[:clothing] = Category.create!(
-  name: 'Clothing & Fashion',
-  description: 'Apparel, shoes, and fashion accessories'
+  name: 'ファッション',
+  description: 'メンズ・レディース・キッズの衣類、靴、バッグなど'
 )
 
 categories[:books] = Category.create!(
-  name: 'Books',
-  description: 'Books, magazines, and publications'
+  name: '本・雑誌',
+  description: '技術書、小説、ビジネス書、雑誌など'
 )
 
 categories[:sports] = Category.create!(
-  name: 'Sports & Outdoors',
-  description: 'Sports equipment and outdoor gear'
+  name: 'スポーツ・アウトドア',
+  description: 'フィットネス用品、アウトドア用品、スポーツウェアなど'
 )
 
 categories[:home] = Category.create!(
-  name: 'Home & Kitchen',
-  description: 'Home appliances, kitchenware, and furniture'
+  name: 'キッチン・日用品',
+  description: 'キッチン用品、生活雑貨、インテリアなど'
 )
 
-puts "✅ Created #{categories.count} categories"
+puts "✅ カテゴリを#{categories.count}件作成しました"
 
-# Create Products
-puts "Creating products..."
+# 商品を作成
+puts "商品を作成中..."
 products = []
 
-# Electronics Products
+# 家電・スマートフォン
 products << Product.create!(
   category: categories[:electronics],
-  name: 'Wireless Bluetooth Earbuds',
-  description: 'Premium wireless earbuds with active noise cancellation, 30-hour battery life, and crystal-clear sound quality. Perfect for music lovers and commuters.',
-  price: 89.99,
+  name: 'ワイヤレスイヤホン（ノイズキャンセリング）',
+  description: 'アクティブノイズキャンセリング搭載の完全ワイヤレスイヤホン。最大30時間再生、IPX4防水対応。通勤・通学に最適。',
+  price: 9800,
   stock_quantity: 150,
   is_active: true,
   is_suspended: false
@@ -105,9 +102,9 @@ products << Product.create!(
 
 products << Product.create!(
   category: categories[:electronics],
-  name: 'Smart Watch Pro',
-  description: 'Advanced fitness tracking smartwatch with heart rate monitor, GPS, and 7-day battery life. Compatible with iOS and Android.',
-  price: 299.99,
+  name: 'スマートウォッチ Pro',
+  description: '心拍数・血中酸素・GPS搭載のスマートウォッチ。7日間バッテリー持続、iOS/Android対応。健康管理に最適。',
+  price: 29800,
   stock_quantity: 75,
   is_active: true,
   is_suspended: false
@@ -115,20 +112,20 @@ products << Product.create!(
 
 products << Product.create!(
   category: categories[:electronics],
-  name: 'Portable Power Bank 20000mAh',
-  description: 'High-capacity power bank with fast charging technology. Charge your devices multiple times on the go.',
-  price: 45.99,
+  name: 'モバイルバッテリー 20000mAh',
+  description: '大容量20000mAhのモバイルバッテリー。USB-C急速充電対応、スマホ約5回分充電可能。薄型軽量設計。',
+  price: 3980,
   stock_quantity: 200,
   is_active: true,
   is_suspended: false
 )
 
-# Computer Products
+# パソコン・周辺機器
 products << Product.create!(
   category: categories[:computers],
-  name: 'Gaming Laptop 15.6"',
-  description: 'High-performance gaming laptop with Intel i7 processor, 16GB RAM, 512GB SSD, and dedicated graphics card.',
-  price: 1299.99,
+  name: 'ゲーミングノートPC 15.6インチ',
+  description: 'Core i7プロセッサ、16GBメモリ、512GB SSD搭載の高性能ゲーミングノートPC。144Hzディスプレイで滑らかなゲームプレイを実現。',
+  price: 129800,
   stock_quantity: 25,
   is_active: true,
   is_suspended: false
@@ -136,9 +133,9 @@ products << Product.create!(
 
 products << Product.create!(
   category: categories[:computers],
-  name: 'Wireless Gaming Mouse',
-  description: 'Ergonomic wireless gaming mouse with customizable RGB lighting and programmable buttons.',
-  price: 59.99,
+  name: 'ワイヤレスゲーミングマウス',
+  description: 'RGBライティング搭載のワイヤレスゲーミングマウス。最大25600DPI、ボタン7個カスタマイズ可能。充電しながら使用可能。',
+  price: 7980,
   stock_quantity: 100,
   is_active: true,
   is_suspended: false
@@ -146,20 +143,20 @@ products << Product.create!(
 
 products << Product.create!(
   category: categories[:computers],
-  name: 'Mechanical Keyboard RGB',
-  description: 'Premium mechanical keyboard with Cherry MX switches, RGB backlighting, and aluminum frame.',
-  price: 129.99,
+  name: 'メカニカルキーボード RGBバックライト',
+  description: '青軸メカニカルスイッチ採用のRGBゲーミングキーボード。アルミフレーム、N-キーロールオーバー対応。打鍵感抜群。',
+  price: 12800,
   stock_quantity: 80,
   is_active: true,
   is_suspended: false
 )
 
-# Audio Products
+# イヤホン・スピーカー
 products << Product.create!(
   category: categories[:audio],
-  name: 'Noise Cancelling Headphones',
-  description: 'Over-ear headphones with industry-leading noise cancellation, 40-hour battery, and premium sound.',
-  price: 349.99,
+  name: 'オーバーイヤーヘッドホン（ノイキャン）',
+  description: '業界最高水準のノイズキャンセリング搭載ヘッドホン。40時間再生、折りたたみ可能でコンパクト収納。ハイレゾ音源対応。',
+  price: 34800,
   stock_quantity: 60,
   is_active: true,
   is_suspended: false
@@ -167,9 +164,9 @@ products << Product.create!(
 
 products << Product.create!(
   category: categories[:audio],
-  name: 'Portable Bluetooth Speaker',
-  description: 'Waterproof portable speaker with 360-degree sound, 12-hour battery, and built-in microphone.',
-  price: 79.99,
+  name: 'ポータブルBluetoothスピーカー',
+  description: '360度サウンド・IPX7完全防水のポータブルスピーカー。12時間再生、マイク内蔵でハンズフリー通話も可能。アウトドアに最適。',
+  price: 6980,
   stock_quantity: 120,
   is_active: true,
   is_suspended: false
@@ -177,20 +174,20 @@ products << Product.create!(
 
 products << Product.create!(
   category: categories[:audio],
-  name: 'Studio Monitor Speakers (Pair)',
-  description: 'Professional studio monitors with accurate sound reproduction. Perfect for music production.',
-  price: 449.99,
+  name: 'スタジオモニタースピーカー（ペア）',
+  description: 'DTM・音楽制作向けの本格スタジオモニタースピーカー。フラットな音響特性でミックスダウン・マスタリングに最適。',
+  price: 42800,
   stock_quantity: 30,
   is_active: true,
   is_suspended: false
 )
 
-# Clothing Products
+# ファッション
 products << Product.create!(
   category: categories[:clothing],
-  name: 'Premium Cotton T-Shirt',
-  description: 'Soft, comfortable 100% organic cotton t-shirt. Available in multiple colors.',
-  price: 24.99,
+  name: 'オーガニックコットンTシャツ',
+  description: '100%オーガニックコットン使用のシンプルTシャツ。肌触りが良く吸汗速乾性に優れています。カラー展開10色。',
+  price: 2980,
   stock_quantity: 500,
   is_active: true,
   is_suspended: false
@@ -198,9 +195,9 @@ products << Product.create!(
 
 products << Product.create!(
   category: categories[:clothing],
-  name: 'Slim Fit Jeans',
-  description: 'Classic slim fit jeans with stretch denim for all-day comfort.',
-  price: 59.99,
+  name: 'スリムフィットデニムパンツ',
+  description: 'ストレッチデニム素材のスリムフィットジーンズ。動きやすく一日中快適に着用できます。ウォッシュ加工で自然な風合い。',
+  price: 5980,
   stock_quantity: 300,
   is_active: true,
   is_suspended: false
@@ -208,20 +205,20 @@ products << Product.create!(
 
 products << Product.create!(
   category: categories[:clothing],
-  name: 'Running Shoes',
-  description: 'Lightweight running shoes with responsive cushioning and breathable mesh upper.',
-  price: 119.99,
+  name: 'ランニングシューズ',
+  description: '軽量クッション素材採用のランニングシューズ。反発性の高いミッドソールで長距離ランも快適。通気性メッシュアッパー採用。',
+  price: 11800,
   stock_quantity: 150,
   is_active: true,
   is_suspended: false
 )
 
-# Books
+# 本・雑誌
 products << Product.create!(
   category: categories[:books],
-  name: 'Web Development Fundamentals',
-  description: 'Complete guide to modern web development covering HTML, CSS, JavaScript, and frameworks.',
-  price: 39.99,
+  name: 'Webアプリ開発入門 HTML/CSS/JavaScript',
+  description: 'HTML・CSS・JavaScriptをゼロから学べる入門書。豊富なサンプルコード付きで、実際に手を動かしながら学習できます。',
+  price: 2860,
   stock_quantity: 100,
   is_active: true,
   is_suspended: false
@@ -229,20 +226,20 @@ products << Product.create!(
 
 products << Product.create!(
   category: categories[:books],
-  name: 'Design Patterns in Ruby',
-  description: 'Learn essential design patterns and best practices for Ruby development.',
-  price: 44.99,
+  name: 'Rubyデザインパターン入門',
+  description: 'Rubyでよく使われるデザインパターンを実践的に解説。リファクタリング手法も網羅し、より良いコードの書き方が身につきます。',
+  price: 3520,
   stock_quantity: 75,
   is_active: true,
   is_suspended: false
 )
 
-# Sports Products
+# スポーツ・アウトドア
 products << Product.create!(
   category: categories[:sports],
-  name: 'Yoga Mat Premium',
-  description: 'Extra-thick yoga mat with non-slip surface and carrying strap.',
-  price: 34.99,
+  name: 'ヨガマット 厚さ10mm',
+  description: '厚さ10mmの高密度ヨガマット。滑り止め加工で安定したポーズをサポート。持ち運び用ストラップ付き。初心者にもおすすめ。',
+  price: 3480,
   stock_quantity: 200,
   is_active: true,
   is_suspended: false
@@ -250,20 +247,20 @@ products << Product.create!(
 
 products << Product.create!(
   category: categories[:sports],
-  name: 'Adjustable Dumbbell Set',
-  description: 'Space-saving adjustable dumbbells with weight range from 5 to 52.5 lbs.',
-  price: 299.99,
+  name: 'アジャスタブルダンベル（20kgセット）',
+  description: '2kg〜20kgまで調整可能なアジャスタブルダンベルセット。スペース節約設計で自宅トレーニングに最適。ダイヤル式で簡単切り替え。',
+  price: 24800,
   stock_quantity: 40,
   is_active: true,
   is_suspended: false
 )
 
-# Home Products
+# キッチン・日用品
 products << Product.create!(
   category: categories[:home],
-  name: 'Smart Coffee Maker',
-  description: 'Programmable coffee maker with app control, auto-brew timer, and thermal carafe.',
-  price: 89.99,
+  name: 'スマートコーヒーメーカー',
+  description: 'スマホアプリで操作できる全自動コーヒーメーカー。タイマー予約・保温機能付き。豆から挽きたての本格コーヒーが楽しめます。',
+  price: 8980,
   stock_quantity: 85,
   is_active: true,
   is_suspended: false
@@ -271,63 +268,61 @@ products << Product.create!(
 
 products << Product.create!(
   category: categories[:home],
-  name: 'Air Purifier HEPA Filter',
-  description: 'Quiet air purifier with true HEPA filter. Covers rooms up to 500 sq ft.',
-  price: 179.99,
+  name: '空気清浄機 HEPAフィルター搭載',
+  description: '花粉・PM2.5・ウイルスを99.97%除去するHEPAフィルター搭載の空気清浄機。静音設計で寝室でも使いやすい。14畳対応。',
+  price: 18800,
   stock_quantity: 50,
   is_active: true,
   is_suspended: false
 )
 
-# Low stock product (for testing)
+# 残り少ない商品（テスト用）
 products << Product.create!(
   category: categories[:electronics],
-  name: 'Limited Edition Smartphone',
-  description: 'Rare limited edition smartphone with premium features.',
-  price: 999.99,
+  name: '限定モデル スマートフォン 512GB',
+  description: '数量限定モデルのフラッグシップスマートフォン。6.7インチ有機ELディスプレイ、トリプルカメラ搭載。カラー：マットブラック。',
+  price: 99800,
   stock_quantity: 3,
   is_active: true,
   is_suspended: false
 )
 
-# Out of stock product (for testing)
+# 在庫切れ商品（テスト用）
 products << Product.create!(
   category: categories[:books],
-  name: 'Sold Out Book',
-  description: 'This book is currently out of stock.',
-  price: 29.99,
+  name: 'プログラミング入門（完売）',
+  description: '大変ご好評いただき現在在庫切れとなっております。入荷次第ご案内いたします。',
+  price: 1980,
   stock_quantity: 0,
   is_active: true,
   is_suspended: false
 )
 
-puts "✅ Created #{products.count} products"
+puts "✅ 商品を#{products.count}件作成しました"
 
-# Create Product Images
-puts "Creating product images..."
+# 商品画像を作成
+puts "商品画像を作成中..."
 image_count = 0
 
 products.each_with_index do |product, index|
-  # Add 1-3 images per product
   num_images = rand(1..3)
 
   num_images.times do |img_index|
     ProductImage.create!(
       product: product,
-      image_url: "https://via.placeholder.com/600x400?text=#{product.name.gsub(' ', '+')}+#{img_index + 1}",
+      image_url: "https://placehold.jp/600x400.png?text=#{URI.encode_www_form_component(product.name)}",
       display_order: img_index
     )
     image_count += 1
   end
 end
 
-puts "✅ Created #{image_count} product images"
+puts "✅ 商品画像を#{image_count}件作成しました"
 
-# Create sample carts and orders for demonstration
-puts "Creating sample orders..."
+# サンプル注文を作成
+puts "サンプル注文を作成中..."
 order_count = 0
 
-# Create a completed order for user 1
 cart1 = users[0].carts.create!
 cart1.cart_items.create!(product: products[0], quantity: 2)
 cart1.cart_items.create!(product: products[4], quantity: 1)
@@ -349,7 +344,6 @@ end
 
 order_count += 1
 
-# Create a pending order for user 2
 cart2 = users[1].carts.create!
 cart2.cart_items.create!(product: products[6], quantity: 1)
 
@@ -368,34 +362,33 @@ order2.order_items.create!(
 
 order_count += 1
 
-puts "✅ Created #{order_count} sample orders"
+puts "✅ サンプル注文を#{order_count}件作成しました"
 
-# Create an active cart for user 3 (for testing)
-puts "Creating test cart..."
+puts "テスト用カートを作成中..."
 test_cart = users[2].carts.create!
 test_cart.cart_items.create!(product: products[1], quantity: 1)
 test_cart.cart_items.create!(product: products[3], quantity: 2)
 
-puts "✅ Created test cart with #{test_cart.cart_items.count} items"
+puts "✅ テスト用カートを#{test_cart.cart_items.count}件作成しました"
 
 puts "\n" + "="*60
-puts "🎉 Database seeding completed successfully!"
+puts "🎉 シードデータの投入が完了しました！"
 puts "="*60
-puts "\n📊 Summary:"
-puts "  - Users: #{User.count}"
-puts "  - Categories: #{Category.count}"
-puts "  - Products: #{Product.count}"
-puts "  - Product Images: #{ProductImage.count}"
-puts "  - Orders: #{Order.count}"
-puts "  - Carts: #{Cart.count}"
-puts "\n👤 Test Accounts:"
-puts "  Regular User:"
+puts "\n📊 サマリー:"
+puts "  - ユーザー: #{User.count}件"
+puts "  - カテゴリ: #{Category.count}件"
+puts "  - 商品: #{Product.count}件"
+puts "  - 商品画像: #{ProductImage.count}件"
+puts "  - 注文: #{Order.count}件"
+puts "  - カート: #{Cart.count}件"
+puts "\n👤 テストアカウント:"
+puts "  一般ユーザー:"
 puts "    Email: user@example.com"
 puts "    Password: password123"
-puts "\n  Another User:"
+puts "\n  別ユーザー:"
 puts "    Email: jane@example.com"
 puts "    Password: password123"
-puts "\n  Test User (with active cart):"
+puts "\n  テストユーザー（カートあり）:"
 puts "    Email: test@example.com"
 puts "    Password: password123"
 puts "="*60
