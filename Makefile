@@ -165,7 +165,7 @@ seed:
 db-reset:
 	@echo "Resetting database..."
 	docker compose run --rm rails-api bundle exec rake db:drop db:create db:migrate db:seed
-	docker compose run --rm laravel-api php artisan migrate:fresh
+	docker compose run --rm laravel-api php artisan migrate
 	docker compose run --rm laravel-api php artisan db:seed
 	@echo "Database reset complete!"
 
