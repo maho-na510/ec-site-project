@@ -1,5 +1,5 @@
 import { userApi } from './api';
-import { Order, CheckoutFormData, PaginatedResponse } from '@types/index';
+import { Order, CheckoutFormData, PaginatedResponse } from '@app-types/index';
 
 export const orderService = {
   async createOrder(data: CheckoutFormData): Promise<Order> {

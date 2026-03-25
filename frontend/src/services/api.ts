@@ -1,5 +1,5 @@
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
-import { ApiError } from '@types/index';
+import { ApiError } from '@app-types/index';
 
 // snake_case を camelCase に変換する関数（Railsのレスポンスをフロントで使いやすくする）
 const snakeToCamel = (obj: unknown): unknown => {

@@ -1,5 +1,5 @@
 import { userApi, adminApi } from './api';
-import { Product, ProductFormData, ProductListParams, PaginatedResponse, Category } from '@types/index';
+import { Product, ProductFormData, ProductListParams, PaginatedResponse, Category } from '@app-types/index';
 
 export const productService = {
   // User-facing product endpoints
