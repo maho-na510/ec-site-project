@@ -57,7 +57,7 @@ describe('ProductsPage', () => {
       }
       if (options.queryKey[0] === 'categories') {
         return {
-          data: { data: mockCategories },
+          data: mockCategories,
           isLoading: false,
           error: null,
         } as any
@@ -113,7 +113,7 @@ describe('ProductsPage', () => {
       }
       if (options.queryKey[0] === 'categories') {
         return {
-          data: { data: mockCategories },
+          data: mockCategories,
           isLoading: false,
           error: null,
         } as any
@@ -142,7 +142,7 @@ describe('ProductsPage', () => {
       }
       if (options.queryKey[0] === 'categories') {
         return {
-          data: { data: mockCategories },
+          data: mockCategories,
           isLoading: false,
           error: null,
         } as any
@@ -174,7 +174,7 @@ describe('ProductsPage', () => {
       }
       if (options.queryKey[0] === 'categories') {
         return {
-          data: { data: mockCategories },
+          data: mockCategories,
           isLoading: false,
           error: null,
         } as any

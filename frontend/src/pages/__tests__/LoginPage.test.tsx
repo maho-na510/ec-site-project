@@ -30,7 +30,7 @@ describe('LoginPage', () => {
   it('ログインフォームが正しく表示される', () => {
     render(<LoginPage />)
 
-    expect(screen.getByText('ログイン')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'ログイン' })).toBeInTheDocument()
     expect(screen.getByLabelText(/メールアドレス/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/パスワード/i)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /ログイン/i })).toBeInTheDocument()
@@ -58,7 +58,7 @@ describe('LoginPage', () => {
     await user.click(loginButton)
 
     await waitFor(() => {
-      expect(mockLogin).toHaveBeenCalledWith('test@example.com', 'password123')
+      expect(mockLogin).toHaveBeenCalledWith({ email: 'test@example.com', password: 'password123', rememberMe: false })
     })
   })
 

@@ -31,11 +31,7 @@ const LoginPage: React.FC = () => {
       // Redirect to the page they were trying to access, or home
       navigate(from, { replace: true });
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : 'メールアドレスまたはパスワードが正しくありません'
-      );
+      setError('ログインに失敗しました');
     } finally {
       setIsLoading(false);
     }
@@ -47,7 +43,7 @@ const LoginPage: React.FC = () => {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-secondary-900 mb-2">ログイン</h1>
-          <p className="text-secondary-600">ログイン</p>
+          <p className="text-secondary-600">アカウントにサインイン</p>
         </div>
 
         {/* Login Form Card */}
@@ -68,10 +64,10 @@ const LoginPage: React.FC = () => {
               error={errors.email?.message}
               fullWidth
               {...register('email', {
-                required: 'この項目は必須です',
+                required: 'メールアドレスを入力してください',
                 pattern: {
                   value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                  message: '有効なメールアドレスを入力してください',
+                  message: '正しいメールアドレスを入力してください',
                 },
               })}
             />
@@ -84,10 +80,10 @@ const LoginPage: React.FC = () => {
               error={errors.password?.message}
               fullWidth
               {...register('password', {
-                required: 'この項目は必須です',
+                required: 'パスワードを入力してください',
                 minLength: {
                   value: 6,
-                  message: '最低6文字必要です',
+                  message: 'パスワードは6文字以上で入力してください',
                 },
               })}
             />

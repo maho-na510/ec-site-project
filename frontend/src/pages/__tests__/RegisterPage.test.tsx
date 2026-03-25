@@ -9,7 +9,6 @@ jest.mock('react-router-dom', () => ({
   useNavigate: () => mockNavigate,
 }))
 
-const mockRegister = jest.fn()
 jest.mock('../../contexts/AuthContext', () => ({
   ...jest.requireActual('../../contexts/AuthContext'),
   useAuth: () => ({
@@ -20,9 +19,13 @@ jest.mock('../../contexts/AuthContext', () => ({
   }),
 }))
 
-// Mock API
-jest.mock('../../services/api', () => ({
-  register: (data: any) => mockRegister(data),
+const mockRegister = jest.fn()
+jest.mock('../../services/authService', () => ({
+  authService: {
+    register: (...args: any[]) => mockRegister(...args),
+    isAuthenticated: () => false,
+    clearTokens: jest.fn(),
+  },
 }))
 
 describe('RegisterPage', () => {
@@ -33,7 +36,7 @@ describe('RegisterPage', () => {
   it('登録フォームが正しく表示される', () => {
     render(<RegisterPage />)
 
-    expect(screen.getByText('新規登録')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: '新規登録' })).toBeInTheDocument()
     expect(screen.getByLabelText(/名前/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/メールアドレス/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/^パスワード$/i)).toBeInTheDocument()
@@ -51,9 +54,7 @@ describe('RegisterPage', () => {
 
   it('有効な入力で登録できる', async () => {
     const user = userEvent.setup()
-    mockRegister.mockResolvedValueOnce({
-      data: { user: { id: 1, email: 'test@example.com' }, token: 'fake-token' },
-    })
+    mockRegister.mockResolvedValueOnce({ message: '登録が完了しました' })
 
     render(<RegisterPage />)
 
@@ -71,8 +72,9 @@ describe('RegisterPage', () => {
         name: 'テストユーザー',
         email: 'test@example.com',
         password: 'password123',
-        password_confirmation: 'password123',
+        passwordConfirmation: 'password123',
         address: '東京都渋谷区1-2-3',
+        phone: '',
       })
     })
   })
@@ -136,9 +138,7 @@ describe('RegisterPage', () => {
 
   it('登録失敗時にエラーメッセージが表示される', async () => {
     const user = userEvent.setup()
-    mockRegister.mockRejectedValueOnce({
-      response: { data: { message: 'このメールアドレスは既に使用されています' } },
-    })
+    mockRegister.mockRejectedValueOnce(new Error('このメールアドレスは既に使用されています'))
 
     render(<RegisterPage />)
 

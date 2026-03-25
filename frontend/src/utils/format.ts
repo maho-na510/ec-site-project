@@ -3,11 +3,8 @@ import { format, formatDistance, parseISO } from 'date-fns';
 /**
  * 金額を日本円でフォーマット
  */
-export const formatCurrency = (amount: number, currency = 'JPY'): string => {
-  return new Intl.NumberFormat('ja-JP', {
-    style: 'currency',
-    currency,
-  }).format(amount);
+export const formatCurrency = (amount: number): string => {
+  return `¥${Math.round(amount).toLocaleString('ja-JP')}`;
 };
 
 /**

@@ -1,6 +1,6 @@
 import React from 'react'
-import { screen } from '@testing-library/react'
-import { render } from '../../test/test-utils'
+import { render, screen } from '@testing-library/react'
+import { BrowserRouter } from 'react-router-dom'
 import Header from '../Header'
 
 // useAuth をモック
@@ -19,7 +19,6 @@ import { useCart } from '../../contexts/CartContext'
 const mockUseAuth = useAuth as jest.MockedFunction<typeof useAuth>
 const mockUseCart = useCart as jest.MockedFunction<typeof useCart>
 
-// テスト用のデフォルトモック値
 const defaultCartMock = {
   cart: null,
   itemCount: 0,
@@ -43,6 +42,8 @@ const defaultAuthMock = {
   refreshUser: jest.fn(),
 }
 
+const renderHeader = () => render(<BrowserRouter><Header /></BrowserRouter>)
+
 describe('Header', () => {
   beforeEach(() => {
     jest.clearAllMocks()
@@ -52,7 +53,7 @@ describe('Header', () => {
   it('ログアウト状態のヘッダーが正しく表示される', () => {
     mockUseAuth.mockReturnValue(defaultAuthMock)
 
-    render(<Header />)
+    renderHeader()
 
     expect(screen.getByText('ECサイト')).toBeInTheDocument()
     expect(screen.getByText('ホーム')).toBeInTheDocument()
@@ -76,7 +77,7 @@ describe('Header', () => {
       },
     })
 
-    render(<Header />)
+    renderHeader()
 
     expect(screen.getByText('test@example.com')).toBeInTheDocument()
     expect(screen.queryByText('ログイン')).not.toBeInTheDocument()
@@ -87,7 +88,7 @@ describe('Header', () => {
     mockUseAuth.mockReturnValue(defaultAuthMock)
     mockUseCart.mockReturnValue({ ...defaultCartMock, itemCount: 3 })
 
-    render(<Header />)
+    renderHeader()
 
     expect(screen.getByText('3')).toBeInTheDocument()
   })
@@ -96,7 +97,7 @@ describe('Header', () => {
     mockUseAuth.mockReturnValue(defaultAuthMock)
     mockUseCart.mockReturnValue({ ...defaultCartMock, itemCount: 0 })
 
-    render(<Header />)
+    renderHeader()
 
     expect(screen.queryByText('0')).not.toBeInTheDocument()
   })

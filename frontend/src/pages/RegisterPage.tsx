@@ -17,7 +17,7 @@ const RegisterPage: React.FC = () => {
     handleSubmit,
     formState: { errors },
     watch,
-  } = useForm<RegisterFormData>();
+  } = useForm<RegisterFormData>({ mode: 'onChange' });
 
   const password = watch('password');
 
@@ -36,9 +36,7 @@ const RegisterPage: React.FC = () => {
         });
       }, 2000);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : 'エラーが発生しました'
-      );
+      setError('登録に失敗しました');
       setIsLoading(false);
     }
   };
@@ -76,8 +74,8 @@ const RegisterPage: React.FC = () => {
               error={errors.name?.message}
               fullWidth
               {...register('name', {
-                required: 'この項目は必須です',
-                minLength: { value: 2, message: '最低2文字必要です' },
+                required: '名前を入力してください',
+                minLength: { value: 2, message: '名前は2文字以上で入力してください' },
               })}
             />
 
@@ -89,10 +87,10 @@ const RegisterPage: React.FC = () => {
               error={errors.email?.message}
               fullWidth
               {...register('email', {
-                required: 'この項目は必須です',
+                required: 'メールアドレスを入力してください',
                 pattern: {
                   value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                  message: '有効なメールアドレスを入力してください',
+                  message: '正しいメールアドレスを入力してください',
                 },
               })}
             />
@@ -104,9 +102,7 @@ const RegisterPage: React.FC = () => {
               placeholder="090-1234-5678"
               error={errors.phone?.message}
               fullWidth
-              {...register('phone', {
-                required: 'この項目は必須です',
-              })}
+              {...register('phone')}
             />
 
             {/* 住所 */}
@@ -115,9 +111,7 @@ const RegisterPage: React.FC = () => {
               placeholder="東京都渋谷区..."
               error={errors.address?.message}
               fullWidth
-              {...register('address', {
-                required: 'この項目は必須です',
-              })}
+              {...register('address')}
             />
 
             {/* パスワード */}
@@ -129,20 +123,20 @@ const RegisterPage: React.FC = () => {
               helperText="8文字以上で入力してください"
               fullWidth
               {...register('password', {
-                required: 'この項目は必須です',
-                minLength: { value: 8, message: '最低8文字必要です' },
+                required: 'パスワードを入力してください',
+                minLength: { value: 6, message: 'パスワードは6文字以上で入力してください' },
               })}
             />
 
             {/* パスワード確認 */}
             <Input
-              label="パスワード（確認）"
+              label="パスワード (確認)"
               type="password"
               placeholder="パスワードを再入力"
               error={errors.passwordConfirmation?.message}
               fullWidth
               {...register('passwordConfirmation', {
-                required: 'この項目は必須です',
+                required: 'パスワード（確認）を入力してください',
                 validate: (value) =>
                   value === password || 'パスワードが一致しません',
               })}
