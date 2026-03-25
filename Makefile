@@ -1,4 +1,4 @@
-.PHONY: help setup build start stop restart logs clean test migrate seed shell-rails shell-laravel shell-frontend db-reset
+.PHONY: help setup build start stop restart logs clean test migrate seed shell-rails shell-laravel shell-frontend db-reset report-inventory report-inventory-per-admin report-list scheduler-logs
 
 # Default target
 help:
@@ -33,6 +33,12 @@ help:
 	@echo "  make shell-rails    - Open bash shell in Rails container"
 	@echo "  make shell-laravel  - Open bash shell in Laravel container"
 	@echo "  make shell-frontend - Open bash shell in Frontend container"
+	@echo ""
+	@echo "Scheduler / Reports:"
+	@echo "  make report-inventory         - Generate all-products inventory CSV now"
+	@echo "  make report-inventory-per-admin - Generate per-admin inventory CSVs now"
+	@echo "  make report-list              - List all generated reports"
+	@echo "  make scheduler-logs           - Tail scheduler logs"
 	@echo ""
 
 # Initial setup - run this once when first cloning the project
@@ -171,6 +177,28 @@ shell-laravel:
 
 shell-frontend:
 	docker compose run --rm frontend sh
+
+# --- Scheduler / Reports ---
+
+# 全商品の在庫CSVを今すぐ生成
+report-inventory:
+	@echo "Generating all-products inventory report..."
+	docker compose exec laravel-api php artisan reports:generate-inventory
+	@echo "Done! Check storage/app/reports/ for the file."
+
+# 管理者ごとの在庫CSVを今すぐ生成（毎日9時のスケジュールと同じ処理）
+report-inventory-per-admin:
+	@echo "Generating per-admin inventory reports..."
+	docker compose exec laravel-api php artisan reports:generate-inventory --per-admin
+	@echo "Done! Check storage/app/reports/ for the files."
+
+# 生成済みレポートの一覧を表示
+report-list:
+	docker compose exec laravel-api php artisan tinker --execute="App\Services\ReportGenerationService::new()->getAvailableReports() |> collect($$1)->each(fn($$r) => dump($$r['filename'], $$r['size']))"
+
+# スケジューラーのログを確認
+scheduler-logs:
+	docker compose exec laravel-scheduler tail -f /var/www/html/storage/logs/scheduler.log
 
 # Install dependencies
 install:

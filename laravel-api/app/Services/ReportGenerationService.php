@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Admin;
 use App\Models\Product;
 use App\Models\InventoryLog;
 use Illuminate\Support\Facades\Storage;
@@ -112,6 +113,76 @@ class ReportGenerationService
         fclose($output);
 
         return $csvContent;
+    }
+
+    /**
+     * 管理者（クライアント）ごとに在庫CSVを生成する。
+     * 課題要件「各クライアントごとの在庫一覧をCSVとして出力」に対応。
+     *
+     * 各管理者が登録した商品のみを対象にし、
+     * inventory_report_admin_{id}_{name}_{date}.csv として保存する。
+     *
+     * @param string|null $date
+     * @return array
+     */
+    public function generatePerAdminInventoryReports(?string $date = null): array
+    {
+        $date = $date ?? now()->format('Y-m-d');
+        $results = [];
+
+        $admins = Admin::all();
+
+        foreach ($admins as $admin) {
+            try {
+                // その管理者が登録した商品のみ取得
+                $products = Product::with('category')
+                    ->where('created_by_admin_id', $admin->id)
+                    ->orderBy('category_id')
+                    ->orderBy('name')
+                    ->get();
+
+                // ファイル名に使えない文字を除去
+                $safeName = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $admin->name);
+                $filename = "inventory_report_admin_{$admin->id}_{$safeName}_{$date}.csv";
+                $filepath = "reports/{$filename}";
+
+                $csvContent = $this->generateInventoryCsv($products);
+                Storage::put($filepath, $csvContent);
+
+                $results[] = [
+                    'admin_id'   => $admin->id,
+                    'admin_name' => $admin->name,
+                    'filename'   => $filename,
+                    'row_count'  => $products->count(),
+                    'file_size'  => strlen($csvContent),
+                ];
+
+                Log::info('Per-admin inventory report generated', [
+                    'admin_id'   => $admin->id,
+                    'admin_name' => $admin->name,
+                    'filename'   => $filename,
+                    'row_count'  => $products->count(),
+                ]);
+            } catch (\Exception $e) {
+                Log::error('Failed to generate per-admin inventory report', [
+                    'admin_id' => $admin->id,
+                    'error'    => $e->getMessage(),
+                ]);
+
+                $results[] = [
+                    'admin_id'   => $admin->id,
+                    'admin_name' => $admin->name,
+                    'error'      => $e->getMessage(),
+                ];
+            }
+        }
+
+        return [
+            'success'      => true,
+            'total_admins' => count($admins),
+            'reports'      => $results,
+            'date'         => $date,
+        ];
     }
 
     /**
