@@ -116,6 +116,31 @@ docker compose exec frontend npm test LoginPage.test.tsx
 **コンテキストテスト**:
 - `src/contexts/__tests__/CartContext.test.tsx` - カートコンテキスト (6 tests)
 
+### 4. E2E テスト (Cypress)
+
+ブラウザを使って実際のユーザー操作を自動テストする。
+`cy.intercept()` でAPIをモックするので、バックエンドなしでも動く。
+
+```bash
+# フロントエンドのdevサーバーを起動してから実行（別ターミナルで）
+cd frontend
+npm run dev
+
+# 別ターミナルでCypressを起動（インタラクティブ画面つき）
+npm run test:e2e
+
+# ヘッドレス（画面なし、CI向け）
+npm run test:e2e:headless
+```
+
+#### E2E テストファイル一覧
+
+- `cypress/e2e/home.cy.ts` - ホームページ表示・ナビ・未ログイン時のリダイレクト
+- `cypress/e2e/login.cy.ts` - ログインフォームのバリデーションと成功/失敗フロー
+- `cypress/e2e/register.cy.ts` - 新規登録フォームのバリデーションと成功/失敗フロー
+- `cypress/e2e/products.cy.ts` - 商品一覧・検索・カテゴリ絞り込み・詳細ページ
+- `cypress/e2e/cart.cy.ts` - カート表示・商品追加・合計金額
+
 ## すべてのテストを一度に実行
 
 ```bash
@@ -132,8 +157,11 @@ docker compose exec rails-api bundle exec rails test
 # 2. Laravel テスト
 docker compose exec laravel-api php artisan test
 
-# 3. Frontend テスト
+# 3. Frontend ユニットテスト
 docker compose exec frontend npm test
+
+# 4. E2E テスト（devサーバー起動後）
+cd frontend && npm run test:e2e:headless
 ```
 
 ## テスト戦略
@@ -157,7 +185,7 @@ docker compose exec frontend npm test
 
 1. **ユニットテスト (70%)**: 個別の関数、メソッド、コンポーネントのテスト
 2. **統合テスト (20%)**: API エンドポイント、サービス間の連携テスト
-3. **E2Eテスト (10%)**: ユーザーシナリオ全体のテスト (今後実装予定)
+3. **E2Eテスト (10%)**: ユーザーシナリオ全体のテスト (Cypress で実装済み)
 
 ### カバレッジ目標
 
@@ -308,18 +336,18 @@ docker compose exec frontend npm test -- --clearCache
 |---------|---------|-------------|
 | Rails API | 67 tests | 70%+ |
 | Laravel API | 24 tests | 70%+ |
-| Frontend | 37 tests | 70%+ |
-| **合計** | **128 tests** | **70%+** |
+| Frontend (Jest) | 38 tests | 70%+ |
+| Frontend (Cypress E2E) | 22 tests | - |
+| **合計** | **151 tests** | **70%+** |
 
 ### テストカテゴリ
 
 - **ユニットテスト**: 78 tests (61%)
 - **統合テスト**: 50 tests (39%)
-- **E2Eテスト**: 0 tests (今後実装予定)
+- **E2Eテスト**: 22 tests (Cypress)
 
 ## 今後の拡張
 
-- [ ] E2Eテストの追加 (Cypress)
 - [ ] パフォーマンステスト
 - [ ] セキュリティテスト
 - [ ] アクセシビリティテスト
