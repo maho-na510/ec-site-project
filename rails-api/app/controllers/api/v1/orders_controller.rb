@@ -55,11 +55,10 @@ module Api
           return
         end
 
-        result = OrderProcessingService.new(
-          cart: cart,
+        result = OrderProcessingService.new(current_user, {
           shipping_address: params[:shipping_address],
           payment_method: params[:payment_method] || 'credit_card'
-        ).execute
+        }).execute
 
         if result[:success]
           render json: {
