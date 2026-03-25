@@ -38,21 +38,20 @@ module Api
           render json: {
             success: false,
             error: 'Cart is empty',
-            message: 'Please add items to cart before checkout'
+            message: 'カートに商品がありません'
           }, status: :unprocessable_entity
           return
         end
 
-        # Validate shipping address
         unless params[:shipping_address].present?
           render json: {
             success: false,
-            error: 'Shipping address is required'
+            error: 'Shipping address is required',
+            message: '配送先住所を入力してください'
           }, status: :unprocessable_entity
           return
         end
 
-        # Process order
         result = OrderProcessingService.new(
           cart: cart,
           shipping_address: params[:shipping_address],
@@ -63,7 +62,7 @@ module Api
           render json: {
             success: true,
             data: order_detail_json(result[:order]),
-            message: 'Order created successfully'
+            message: '注文が完了しました'
           }, status: :created
         else
           render json: {
@@ -80,12 +79,10 @@ module Api
         }, status: :unprocessable_entity
       rescue StandardError => e
         Rails.logger.error "Order creation error: #{e.message}"
-        Rails.logger.error e.backtrace.join("\n")
-
         render json: {
           success: false,
           error: 'Order creation failed',
-          message: 'An error occurred while processing your order'
+          message: '注文処理中にエラーが発生しました'
         }, status: :internal_server_error
       end
 
@@ -95,7 +92,7 @@ module Api
           render json: {
             success: false,
             error: 'Cannot cancel order',
-            message: "Orders with status '#{@order.status}' cannot be cancelled"
+            message: "このステータスの注文はキャンセルできません（#{@order.status}）"
           }, status: :unprocessable_entity
           return
         end
@@ -104,7 +101,7 @@ module Api
           render json: {
             success: true,
             data: order_json(@order),
-            message: 'Order cancelled successfully'
+            message: '注文をキャンセルしました'
           }, status: :ok
         else
           render json: {
@@ -124,10 +121,10 @@ module Api
       def order_json(order)
         {
           id: order.id,
+          order_number: order.order_number,
           status: order.status,
           total_amount: order.total_amount.to_f,
           shipping_address: order.shipping_address,
-          payment_method: order.payment_method,
           item_count: order.order_items.sum(:quantity),
           created_at: order.created_at,
           updated_at: order.updated_at
@@ -137,26 +134,28 @@ module Api
       def order_detail_json(order)
         {
           id: order.id,
+          order_number: order.order_number,
           status: order.status,
           total_amount: order.total_amount.to_f,
           shipping_address: order.shipping_address,
-          payment_method: order.payment_method,
-          items: order.order_items.includes(product: :product_images).map do |item|
-            {
-              id: item.id,
-              product: {
-                id: item.product.id,
-                name: item.product.name,
-                price: item.product.price.to_f,
-                main_image: item.product.product_images.first&.image_url
-              },
-              quantity: item.quantity,
-              unit_price: item.unit_price.to_f,
-              subtotal: item.subtotal.to_f
-            }
-          end,
+          items: order.order_items.includes(product: :product_images).map { |item| order_item_json(item) },
           created_at: order.created_at,
           updated_at: order.updated_at
+        }
+      end
+
+      def order_item_json(item)
+        {
+          id: item.id,
+          product: {
+            id: item.product.id,
+            name: item.product.name,
+            price: item.product.price.to_f,
+            main_image: item.product.product_images.first&.image_url
+          },
+          quantity: item.quantity,
+          unit_price: item.unit_price.to_f,
+          subtotal: item.subtotal.to_f
         }
       end
 

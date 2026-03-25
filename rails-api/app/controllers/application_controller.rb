@@ -1,16 +1,26 @@
 class ApplicationController < ActionController::API
   include ActionController::Cookies
 
-  # Handle common exceptions
+  # 例外ハンドラー
   rescue_from ActiveRecord::RecordNotFound, with: :record_not_found
   rescue_from ActiveRecord::RecordInvalid, with: :record_invalid
   rescue_from InsufficientStockError, with: :insufficient_stock
   rescue_from StandardError, with: :internal_server_error
 
-  # Authentication
+  # 認証
   before_action :authenticate_user!
 
+  # フロントエンドはcamelCaseでリクエストを送るので、Rails用にsnake_caseに変換
+  before_action :transform_request_params
+
   private
+
+  # camelCase → snake_case 変換（例: shippingAddress → shipping_address）
+  def transform_request_params
+    request.parameters.deep_transform_keys! do |key|
+      key.to_s.gsub(/([A-Z])/) { "_#{$1.downcase}" }
+    end
+  end
 
   def authenticate_user!
     token = request.headers['Authorization']&.split(' ')&.last
@@ -32,7 +42,7 @@ class ApplicationController < ActionController::API
     render json: {
       success: false,
       error: 'Unauthorized',
-      message: 'You must be logged in to access this resource'
+      message: '認証が必要です'
     }, status: :unauthorized
   end
 
@@ -67,7 +77,7 @@ class ApplicationController < ActionController::API
     render json: {
       success: false,
       error: 'Internal server error',
-      message: Rails.env.production? ? 'An error occurred' : exception.message
+      message: Rails.env.production? ? 'エラーが発生しました' : exception.message
     }, status: :internal_server_error
   end
 end

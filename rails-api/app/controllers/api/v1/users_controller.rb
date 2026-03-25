@@ -17,7 +17,7 @@ module Api
           render json: {
             success: true,
             data: user_json(@user),
-            message: 'Profile updated successfully'
+            message: 'プロフィールを更新しました'
           }, status: :ok
         else
           render json: {
@@ -47,7 +47,7 @@ module Api
       end
 
       def user_update_params
-        params.require(:user).permit(:name, :address, :password, :password_confirmation)
+        params.permit(:name, :address, :phone, :password, :password_confirmation)
       end
 
       def user_json(user)
@@ -56,6 +56,7 @@ module Api
           name: user.name,
           email: user.email,
           address: user.address,
+          phone: user.phone,
           created_at: user.created_at,
           updated_at: user.updated_at
         }
@@ -64,29 +65,23 @@ module Api
       def order_json(order)
         {
           id: order.id,
+          order_number: order.order_number,
           status: order.status,
           total_amount: order.total_amount.to_f,
           shipping_address: order.shipping_address,
           created_at: order.created_at,
           updated_at: order.updated_at,
-          items: order.order_items.map do |item|
-            {
-              id: item.id,
-              product: product_summary_json(item.product),
-              quantity: item.quantity,
-              unit_price: item.unit_price.to_f,
-              subtotal: item.subtotal.to_f
-            }
-          end
+          items: order.order_items.map { |item| order_item_json(item) }
         }
       end
 
-      def product_summary_json(product)
+      def order_item_json(item)
         {
-          id: product.id,
-          name: product.name,
-          price: product.price.to_f,
-          main_image: product.product_images.first&.image_url
+          id: item.id,
+          product_name: item.product&.name,
+          quantity: item.quantity,
+          unit_price: item.unit_price.to_f,
+          subtotal: item.subtotal.to_f
         }
       end
     end

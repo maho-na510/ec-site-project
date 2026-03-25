@@ -7,7 +7,7 @@ module Api
       def index
         page = params[:page]&.to_i || 1
         per_page = params[:per_page]&.to_i || 20
-        per_page = [per_page, 100].min # Cap at 100
+        per_page = [per_page, 100].min
 
         products = Product.active
                          .includes(:category, :product_images)
@@ -36,13 +36,10 @@ module Api
 
       # GET /api/v1/products/search
       def search
-        query = params[:query]
+        query = params[:query] || params[:q]
 
         if query.blank?
-          render json: {
-            success: false,
-            error: 'Search query is required'
-          }, status: :bad_request
+          render json: { success: false, error: '検索キーワードを入力してください' }, status: :bad_request
           return
         end
 
@@ -59,7 +56,7 @@ module Api
         }, status: :ok
       end
 
-      # GET /api/v1/products/category/:category_id
+      # GET /api/v1/products/categories/:category_id
       def by_category
         category = Category.find(params[:category_id])
 
@@ -83,6 +80,7 @@ module Api
 
       private
 
+      # 商品一覧用（画像配列を含む）
       def product_json(product)
         {
           id: product.id,
@@ -91,12 +89,14 @@ module Api
           price: product.price.to_f,
           stock_quantity: product.stock_quantity,
           category: category_json(product.category),
-          main_image: product.product_images.first&.image_url,
+          images: product.product_images.map { |img| image_json(img) },
           is_active: product.is_active,
+          is_suspended: product.is_suspended,
           created_at: product.created_at
         }
       end
 
+      # 商品詳細用
       def product_detail_json(product)
         {
           id: product.id,
@@ -105,13 +105,7 @@ module Api
           price: product.price.to_f,
           stock_quantity: product.stock_quantity,
           category: category_json(product.category),
-          images: product.product_images.map do |image|
-            {
-              id: image.id,
-              image_url: image.image_url,
-              display_order: image.display_order
-            }
-          end,
+          images: product.product_images.order(:display_order).map { |img| image_json(img) },
           is_active: product.is_active,
           is_suspended: product.is_suspended,
           created_at: product.created_at,
@@ -119,7 +113,16 @@ module Api
         }
       end
 
+      def image_json(image)
+        {
+          id: image.id,
+          image_url: image.image_url,
+          display_order: image.display_order
+        }
+      end
+
       def category_json(category)
+        return nil unless category
         {
           id: category.id,
           name: category.name,
@@ -134,10 +137,6 @@ module Api
           total_count: collection.total_count,
           per_page: collection.limit_value
         }
-      end
-
-      def public_action?
-        true
       end
     end
   end
