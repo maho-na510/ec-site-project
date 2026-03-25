@@ -1,5 +1,9 @@
 require "test_helper"
 
+# 認証コントローラーのテスト
+# ここで詰まった：最初 params: { user: { name:, email:, ... } } とネストして送ったが
+# コントローラーは params.require(:name) のようにフラットに受け取っていた
+# Railsの params.permit はネスト構造に気をつけないといけない
 class Api::V1::AuthControllerTest < ActionDispatch::IntegrationTest
   setup do
     @user = users(:one)

@@ -1,5 +1,8 @@
 module Api
   module V1
+    # 注文コントローラー
+    # 注意：order_items テーブルの価格カラムは unit_price ではなく price_at_purchase
+    # マイグレーションファイルでカラム名を確認しないとハマる（自分がハマった）
     class OrdersController < ApplicationController
       before_action :set_order, only: [:show, :cancel]
 

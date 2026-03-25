@@ -174,7 +174,15 @@ class InventoryController extends Controller
     }
 
     /**
-     * Get inventory logs within a date range.
+     * 在庫ログの一覧を取得する
+     *
+     * ここで詰まった：最初 start_date と end_date を required にしていたが
+     * テストで日付を渡さずにアクセスしたら 422 エラーになった
+     * 「日付なしで全件取得したい」という場面もあるので nullable にして
+     * デフォルトで過去30日間を対象にするように変更した
+     *
+     * ルートの注意：/api/v1/admin/inventory/logs（ハイフンでなくスラッシュ！）
+     * inventory-logs と書きたくなるけど実際は inventory/{product} のパスと混在している
      *
      * @param Request $request
      * @return JsonResponse
