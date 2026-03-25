@@ -1,10 +1,10 @@
 import { format, formatDistance, parseISO } from 'date-fns';
 
 /**
- * Format currency amount
+ * 金額を日本円でフォーマット
  */
-export const formatCurrency = (amount: number, currency = 'USD'): string => {
-  return new Intl.NumberFormat('en-US', {
+export const formatCurrency = (amount: number, currency = 'JPY'): string => {
+  return new Intl.NumberFormat('ja-JP', {
     style: 'currency',
     currency,
   }).format(amount);

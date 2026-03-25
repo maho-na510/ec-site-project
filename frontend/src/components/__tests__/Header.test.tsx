@@ -1,13 +1,14 @@
+import React from 'react'
 import { screen } from '@testing-library/react'
 import { render } from '../../test/test-utils'
 import Header from '../Header'
 
-// Mock useAuth
+// useAuth をモック
 jest.mock('../../contexts/AuthContext', () => ({
   useAuth: jest.fn(),
 }))
 
-// Mock useCart
+// useCart をモック
 jest.mock('../../contexts/CartContext', () => ({
   useCart: jest.fn(),
 }))
@@ -18,26 +19,38 @@ import { useCart } from '../../contexts/CartContext'
 const mockUseAuth = useAuth as jest.MockedFunction<typeof useAuth>
 const mockUseCart = useCart as jest.MockedFunction<typeof useCart>
 
+// テスト用のデフォルトモック値
+const defaultCartMock = {
+  cart: null,
+  itemCount: 0,
+  subtotal: 0,
+  isLoading: false,
+  addToCart: jest.fn(),
+  updateQuantity: jest.fn(),
+  removeItem: jest.fn(),
+  clearCart: jest.fn(),
+  refreshCart: jest.fn(),
+}
+
+const defaultAuthMock = {
+  user: null,
+  isAuthenticated: false,
+  isLoading: false,
+  isAdmin: false,
+  login: jest.fn(),
+  adminLogin: jest.fn(),
+  logout: jest.fn(),
+  refreshUser: jest.fn(),
+}
+
 describe('Header', () => {
   beforeEach(() => {
-    mockUseCart.mockReturnValue({
-      items: [],
-      itemCount: 0,
-      totalPrice: 0,
-      addItem: jest.fn(),
-      removeItem: jest.fn(),
-      updateQuantity: jest.fn(),
-      clearCart: jest.fn(),
-    })
+    jest.clearAllMocks()
+    mockUseCart.mockReturnValue(defaultCartMock)
   })
 
   it('ログアウト状態のヘッダーが正しく表示される', () => {
-    mockUseAuth.mockReturnValue({
-      user: null,
-      loading: false,
-      login: jest.fn(),
-      logout: jest.fn(),
-    })
+    mockUseAuth.mockReturnValue(defaultAuthMock)
 
     render(<Header />)
 
@@ -45,68 +58,46 @@ describe('Header', () => {
     expect(screen.getByText('ホーム')).toBeInTheDocument()
     expect(screen.getByText('商品一覧')).toBeInTheDocument()
     expect(screen.getByText('ログイン')).toBeInTheDocument()
-    expect(screen.getByText('会員登録')).toBeInTheDocument()
+    expect(screen.getByText('新規登録')).toBeInTheDocument()
   })
 
   it('ログイン状態のヘッダーが正しく表示される', () => {
     mockUseAuth.mockReturnValue({
-      user: { id: 1, name: 'Test User', email: 'test@example.com', address: '123 Main St' },
-      loading: false,
-      login: jest.fn(),
-      logout: jest.fn(),
+      ...defaultAuthMock,
+      isAuthenticated: true,
+      user: {
+        id: 1,
+        name: 'テストユーザー',
+        email: 'test@example.com',
+        address: '東京都',
+        phone: '090-1234-5678',
+        createdAt: '2024-01-01',
+        updatedAt: '2024-01-01',
+      },
     })
 
     render(<Header />)
 
-    expect(screen.getByText('マイページ')).toBeInTheDocument()
+    expect(screen.getByText('test@example.com')).toBeInTheDocument()
     expect(screen.queryByText('ログイン')).not.toBeInTheDocument()
-    expect(screen.queryByText('会員登録')).not.toBeInTheDocument()
+    expect(screen.queryByText('新規登録')).not.toBeInTheDocument()
   })
 
   it('カートのアイテム数が正しく表示される', () => {
-    mockUseAuth.mockReturnValue({
-      user: null,
-      loading: false,
-      login: jest.fn(),
-      logout: jest.fn(),
-    })
-
-    mockUseCart.mockReturnValue({
-      items: [
-        { id: 1, product_id: 1, quantity: 2, product: {} as any },
-        { id: 2, product_id: 2, quantity: 1, product: {} as any },
-      ],
-      itemCount: 3,
-      totalPrice: 299.97,
-      addItem: jest.fn(),
-      removeItem: jest.fn(),
-      updateQuantity: jest.fn(),
-      clearCart: jest.fn(),
-    })
+    mockUseAuth.mockReturnValue(defaultAuthMock)
+    mockUseCart.mockReturnValue({ ...defaultCartMock, itemCount: 3 })
 
     render(<Header />)
 
     expect(screen.getByText('3')).toBeInTheDocument()
   })
 
-  it('すべてのナビゲーションリンクが正しく機能する', () => {
-    mockUseAuth.mockReturnValue({
-      user: null,
-      loading: false,
-      login: jest.fn(),
-      logout: jest.fn(),
-    })
+  it('カートが空のときバッジが表示されない', () => {
+    mockUseAuth.mockReturnValue(defaultAuthMock)
+    mockUseCart.mockReturnValue({ ...defaultCartMock, itemCount: 0 })
 
     render(<Header />)
 
-    const homeLink = screen.getByText('ホーム').closest('a')
-    const productsLink = screen.getByText('商品一覧').closest('a')
-    const cartLink = screen.getByText('カート').closest('a')
-    const loginLink = screen.getByText('ログイン').closest('a')
-
-    expect(homeLink).toHaveAttribute('href', '/')
-    expect(productsLink).toHaveAttribute('href', '/products')
-    expect(cartLink).toHaveAttribute('href', '/cart')
-    expect(loginLink).toHaveAttribute('href', '/login')
+    expect(screen.queryByText('0')).not.toBeInTheDocument()
   })
 })

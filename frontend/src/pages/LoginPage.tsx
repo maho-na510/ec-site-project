@@ -116,7 +116,7 @@ const LoginPage: React.FC = () => {
 
             {/* Submit Button */}
             <Button type="submit" fullWidth size="lg" isLoading={isLoading}>
-              サインイン
+              ログイン
             </Button>
           </form>
 

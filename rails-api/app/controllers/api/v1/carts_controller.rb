@@ -19,7 +19,7 @@ module Api
           render json: {
             success: false,
             error: 'Insufficient stock',
-            message: "Only #{product.stock_quantity} items available"
+            message: "在庫が不足しています（残り#{product.stock_quantity}個）"
           }, status: :unprocessable_entity
           return
         end
@@ -33,7 +33,7 @@ module Api
           render json: {
             success: true,
             data: cart_json(@cart.reload),
-            message: 'Item added to cart'
+            message: 'カートに追加しました'
           }, status: :ok
         else
           render json: {
@@ -48,14 +48,13 @@ module Api
       def update_item
         cart_item = @cart.cart_items.find(params[:id])
         product = cart_item.product
-
         new_quantity = params[:quantity].to_i
 
         unless product.sufficient_stock?(new_quantity)
           render json: {
             success: false,
             error: 'Insufficient stock',
-            message: "Only #{product.stock_quantity} items available"
+            message: "在庫が不足しています（残り#{product.stock_quantity}個）"
           }, status: :unprocessable_entity
           return
         end
@@ -69,7 +68,7 @@ module Api
           render json: {
             success: true,
             data: cart_json(@cart.reload),
-            message: 'Cart item updated'
+            message: 'カートを更新しました'
           }, status: :ok
         else
           render json: {
@@ -90,7 +89,7 @@ module Api
           render json: {
             success: true,
             data: cart_json(@cart.reload),
-            message: 'Item removed from cart'
+            message: '商品を削除しました'
           }, status: :ok
         else
           render json: {
@@ -109,7 +108,7 @@ module Api
           render json: {
             success: true,
             data: cart_json(@cart.reload),
-            message: 'Cart cleared'
+            message: 'カートをクリアしました'
           }, status: :ok
         else
           render json: {
@@ -129,25 +128,33 @@ module Api
       def cart_json(cart)
         {
           id: cart.id,
-          status: cart.status,
-          items: cart.cart_items.includes(product: :product_images).map do |item|
-            {
-              id: item.id,
-              product: {
-                id: item.product.id,
-                name: item.product.name,
-                price: item.product.price.to_f,
-                stock_quantity: item.product.stock_quantity,
-                main_image: item.product.product_images.first&.image_url
-              },
-              quantity: item.quantity,
-              subtotal: item.subtotal.to_f
-            }
-          end,
+          items: cart.cart_items.includes(product: :product_images).map { |item| cart_item_json(item) },
           total_amount: cart.total_amount.to_f,
           item_count: cart.cart_items.sum(:quantity),
           created_at: cart.created_at,
           updated_at: cart.updated_at
+        }
+      end
+
+      def cart_item_json(item)
+        product = item.product
+        {
+          id: item.id,
+          product_id: product.id,
+          product: {
+            id: product.id,
+            name: product.name,
+            description: product.description,
+            price: product.price.to_f,
+            stock_quantity: product.stock_quantity,
+            images: product.product_images.order(:display_order).map do |img|
+              { id: img.id, image_url: img.image_url, display_order: img.display_order }
+            end,
+            is_active: product.is_active,
+            is_suspended: product.is_suspended
+          },
+          quantity: item.quantity,
+          subtotal: item.subtotal.to_f
         }
       end
     end

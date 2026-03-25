@@ -11,10 +11,11 @@ module Api
         ).authenticate
 
         if result[:success]
+          # result[:user] は as_json から返されたハッシュ（string keys）
           render json: {
             success: true,
             data: {
-              user: result[:user],
+              user: format_user_hash(result[:user]),
               access_token: result[:access_token]
             }
           }, status: :ok
@@ -22,7 +23,7 @@ module Api
           render json: {
             success: false,
             error: 'Authentication failed',
-            message: 'Invalid email or password'
+            message: 'メールアドレスまたはパスワードが正しくありません'
           }, status: :unauthorized
         end
       end
@@ -43,7 +44,7 @@ module Api
               user: user_json(user),
               access_token: result[:access_token]
             },
-            message: 'Registration successful'
+            message: '登録が完了しました'
           }, status: :created
         else
           render json: {
@@ -58,17 +59,11 @@ module Api
       def logout
         token = extract_token_from_header
 
-        if token
-          AuthenticationService.invalidate_token(token)
-          render json: {
-            success: true,
-            message: 'Logged out successfully'
-          }, status: :ok
+        if token && current_user
+          AuthenticationService.logout(current_user, token)
+          render json: { success: true, message: 'ログアウトしました' }, status: :ok
         else
-          render json: {
-            success: false,
-            error: 'No token provided'
-          }, status: :bad_request
+          render json: { success: false, error: 'ログアウトに失敗しました' }, status: :bad_request
         end
       end
 
@@ -77,10 +72,7 @@ module Api
         token = extract_token_from_header
 
         unless token
-          render json: {
-            success: false,
-            error: 'No token provided'
-          }, status: :unauthorized
+          render json: { success: false, error: 'No token provided' }, status: :unauthorized
           return
         end
 
@@ -89,9 +81,7 @@ module Api
         if result[:success]
           render json: {
             success: true,
-            data: {
-              access_token: result[:access_token]
-            }
+            data: { access_token: result[:access_token] }
           }, status: :ok
         else
           render json: {
@@ -105,26 +95,37 @@ module Api
       private
 
       def user_params
-        if params[:user]
-          params.require(:user).permit(:name, :email, :password, :password_confirmation, :address)
-        else
-          params.permit(:name, :email, :password, :password_confirmation, :address)
-        end
+        params.permit(:name, :email, :password, :password_confirmation, :address, :phone)
       end
 
+      # User モデルインスタンスからハッシュを生成
       def user_json(user)
         {
           id: user.id,
           name: user.name,
           email: user.email,
           address: user.address,
+          phone: user.phone,
           created_at: user.created_at,
           updated_at: user.updated_at
         }
       end
 
-      def public_action?
-        %w[login register].include?(action_name)
+      # as_json で返ってきた string-keyed ハッシュを整形
+      def format_user_hash(user_hash)
+        {
+          id: user_hash['id'],
+          name: user_hash['name'],
+          email: user_hash['email'],
+          address: user_hash['address'],
+          phone: user_hash['phone'],
+          created_at: user_hash['created_at'],
+          updated_at: user_hash['updated_at']
+        }
+      end
+
+      def extract_token_from_header
+        request.headers['Authorization']&.split(' ')&.last
       end
     end
   end
