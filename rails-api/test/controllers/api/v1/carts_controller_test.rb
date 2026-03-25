@@ -23,7 +23,7 @@ class Api::V1::CartsControllerTest < ActionDispatch::IntegrationTest
   test "should add item to cart" do
     post api_v1_cart_items_url,
       headers: auth_headers(@user),
-      params: { product_id: @product.id, quantity: 2 },
+      params: { product_id: products(:three).id, quantity: 1 },
       as: :json
 
     assert_response :success
@@ -42,6 +42,8 @@ class Api::V1::CartsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should update cart item quantity" do
+    # フィクスチャのカートと干渉しないよう一度削除してから作り直す
+    @user.carts.destroy_all
     cart = @user.carts.create!
     cart_item = cart.cart_items.create!(product: @product, quantity: 1)
 
@@ -55,6 +57,7 @@ class Api::V1::CartsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should remove item from cart" do
+    @user.carts.destroy_all
     cart = @user.carts.create!
     cart_item = cart.cart_items.create!(product: @product, quantity: 1)
 
@@ -67,6 +70,7 @@ class Api::V1::CartsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should clear cart" do
+    @user.carts.destroy_all
     cart = @user.carts.create!
     cart.cart_items.create!(product: @product, quantity: 1)
 

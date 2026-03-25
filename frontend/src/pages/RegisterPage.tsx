@@ -118,9 +118,9 @@ const RegisterPage: React.FC = () => {
             <Input
               label="パスワード"
               type="password"
-              placeholder="パスワード（8文字以上）"
+              placeholder="パスワード（6文字以上）"
               error={errors.password?.message}
-              helperText="8文字以上で入力してください"
+              helperText="6文字以上で入力してください"
               fullWidth
               {...register('password', {
                 required: 'パスワードを入力してください',

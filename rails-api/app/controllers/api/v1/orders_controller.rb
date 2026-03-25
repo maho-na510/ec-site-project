@@ -154,7 +154,7 @@ module Api
             main_image: item.product.product_images.first&.image_url
           },
           quantity: item.quantity,
-          unit_price: item.unit_price.to_f,
+          unit_price: item.price_at_purchase.to_f,  # カラム名はprice_at_purchase（ここつまづいた）
           subtotal: item.subtotal.to_f
         }
       end

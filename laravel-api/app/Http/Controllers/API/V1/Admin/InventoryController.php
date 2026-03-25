@@ -182,16 +182,21 @@ class InventoryController extends Controller
     public function logs(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after_or_equal:start_date',
+            // 日付は省略可能にした（省略時は過去30日間を対象にする）
+            'start_date' => 'nullable|date',
+            'end_date'   => 'nullable|date|after_or_equal:start_date',
             'product_id' => 'nullable|exists:products,id',
-            'admin_id' => 'nullable|exists:admins,id',
+            'admin_id'   => 'nullable|exists:admins,id',
             'action_type' => 'nullable|string|in:initial_stock,restock,sale,adjustment,return',
         ]);
 
         try {
-            $startDate = new \DateTime($validated['start_date']);
-            $endDate = new \DateTime($validated['end_date']);
+            $startDate = isset($validated['start_date'])
+                ? new \DateTime($validated['start_date'])
+                : (new \DateTime())->modify('-30 days');
+            $endDate = isset($validated['end_date'])
+                ? new \DateTime($validated['end_date'])
+                : new \DateTime();
 
             $filters = [
                 'product_id' => $validated['product_id'] ?? null,

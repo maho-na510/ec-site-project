@@ -5,6 +5,7 @@ class User < ApplicationRecord
 
   # Associations
   has_many :carts, dependent: :destroy
+  has_many :cart_items, through: :carts  # カートを経由してアイテムにアクセスできる
   has_many :orders, dependent: :destroy
   has_many :password_reset_tokens, dependent: :destroy
 
@@ -13,7 +14,7 @@ class User < ApplicationRecord
   validates :email, presence: true,
                     uniqueness: { case_sensitive: false },
                     format: { with: URI::MailTo::EMAIL_REGEXP }
-  validates :password, length: { minimum: 8 }, if: -> { password.present? }
+  validates :password, length: { minimum: 6 }, if: -> { password.present? }
   validates :phone, format: { with: /\A[\d\s\-\(\)\+]+\z/, message: "only allows numbers, spaces, and dashes" },
                     allow_blank: true
 
