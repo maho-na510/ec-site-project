@@ -22,9 +22,6 @@ class Product < ApplicationRecord
   scope :out_of_stock, -> { where(stock_quantity: 0) }
   scope :by_category, ->(category_id) { where(category_id: category_id) }
   scope :search, ->(query) { where('name LIKE ? OR description LIKE ?', "%#{query}%", "%#{query}%") }
-  scope :price_range, ->(min, max) { where(price: min..max) }
-  scope :recent, -> { order(created_at: :desc) }
-  scope :popular, -> { joins(:order_items).group(:id).order('COUNT(order_items.id) DESC') }
 
   # Callbacks
   before_save :ensure_price_precision

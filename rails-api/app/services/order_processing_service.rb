@@ -22,19 +22,10 @@ class OrderProcessingService
       order = nil
 
       ActiveRecord::Base.transaction do
-        # 1. 在庫をロックして確認
         lock_and_validate_inventory
-
-        # 2. 注文レコードを作成
         order = create_order
-
-        # 3. 在庫を減らす
         deduct_inventory(order)
-
-        # 4. 決済処理
         process_payment(order)
-
-        # 5. カートをクリア
         @cart.checkout!
       end
 

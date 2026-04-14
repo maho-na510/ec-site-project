@@ -10,12 +10,6 @@ use Illuminate\Support\Facades\Log;
 
 class ReportGenerationService
 {
-    /**
-     * Generate inventory report in CSV format.
-     *
-     * @param string|null $date
-     * @return array
-     */
     public function generateInventoryReport(?string $date = null): array
     {
         try {
@@ -64,12 +58,6 @@ class ReportGenerationService
         }
     }
 
-    /**
-     * Generate CSV content for inventory report.
-     *
-     * @param \Illuminate\Database\Eloquent\Collection $products
-     * @return string
-     */
     private function generateInventoryCsv($products): string
     {
         $output = fopen('php://temp', 'r+');
@@ -185,13 +173,6 @@ class ReportGenerationService
         ];
     }
 
-    /**
-     * Generate sales report for a date range.
-     *
-     * @param \DateTime $startDate
-     * @param \DateTime $endDate
-     * @return array
-     */
     public function generateSalesReport(\DateTime $startDate, \DateTime $endDate): array
     {
         try {
@@ -245,12 +226,6 @@ class ReportGenerationService
         }
     }
 
-    /**
-     * Generate CSV content for sales report.
-     *
-     * @param \Illuminate\Database\Eloquent\Collection $salesLogs
-     * @return string
-     */
     private function generateSalesCsv($salesLogs): string
     {
         $output = fopen('php://temp', 'r+');
@@ -288,12 +263,6 @@ class ReportGenerationService
         return $csvContent;
     }
 
-    /**
-     * Clean up old reports.
-     *
-     * @param int $daysToKeep
-     * @return int
-     */
     public function cleanupOldReports(int $daysToKeep = 30): int
     {
         $files = Storage::files('reports');
@@ -317,11 +286,6 @@ class ReportGenerationService
         return $deletedCount;
     }
 
-    /**
-     * Get list of available reports.
-     *
-     * @return array
-     */
     public function getAvailableReports(): array
     {
         $files = Storage::files('reports');
