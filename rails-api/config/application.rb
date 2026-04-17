@@ -26,15 +26,7 @@ module RailsApi
     # API-only application
     config.api_only = true
 
-    # Session store configuration
-    config.session_store :redis_store,
-                         servers: ENV.fetch("REDIS_URL", "redis://localhost:6379/0/session"),
-                         expire_after: 24.hours,
-                         key: "_ec_site_session",
-                         threadsafe: true,
-                         signed: true
-
-    # Cache store configuration
+    # Cache store configuration (Redis)
     config.cache_store = :redis_cache_store, {
       url: ENV.fetch("REDIS_URL", "redis://localhost:6379/0"),
       namespace: "ec_site_cache",
@@ -43,8 +35,10 @@ module RailsApi
     }
 
     # Middleware configuration
+    # Cookie操作を有効化（HttpOnly JWTクッキーの読み書きに必要）
     config.middleware.use ActionDispatch::Cookies
-    config.middleware.use ActionDispatch::Session::CookieStore
+    # セッションはJWT + HttpOnly Cookieで管理するため CookieStore は使用しない。
+    # ステートレスなAPI設計のためサーバーサイドセッションは不要。
 
     # Timezone and locale
     config.time_zone = "UTC"

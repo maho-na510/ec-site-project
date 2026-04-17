@@ -44,6 +44,13 @@ export default function AdminInventoryPage() {
   });
   const logs = logsData?.data ?? [];
 
+  // 商品名マップ (id → name)
+  const productMap = React.useMemo(() => {
+    const map: Record<number, string> = {};
+    products.forEach((p) => { map[p.id] = p.name; });
+    return map;
+  }, [products]);
+
   const adjustMutation = useMutation({
     mutationFn: async () => {
       const { productId, quantity, actionType, notes } = form;
@@ -166,7 +173,7 @@ export default function AdminInventoryPage() {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">日時</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">商品ID</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">商品名</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">操作</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">変更前</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">変更後</th>
@@ -185,7 +192,9 @@ export default function AdminInventoryPage() {
                     <td className="px-4 py-3 text-xs text-gray-500">
                       {new Date(log.createdAt).toLocaleString('ja-JP')}
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-700">{log.productId}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700">
+                      {productMap[log.productId] ?? `商品ID: ${log.productId}`}
+                    </td>
                     <td className="px-4 py-3">
                       <span className="px-2 py-0.5 text-xs bg-blue-100 text-blue-700 rounded-full">
                         {actionTypeLabel[log.actionType as ActionType] ?? log.actionType}

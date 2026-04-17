@@ -12,6 +12,8 @@ class EncryptCookies extends Middleware
      * @var array<int, string>
      */
     protected $except = [
-        //
+        // JWTは自己署名されているためLaravel暗号化は不要
+        // 二重暗号化を避け、InjectJwtFromCookieで生のJWTを直接取得できるようにする
+        'admin_token',
     ];
 }

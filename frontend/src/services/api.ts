@@ -1,6 +1,13 @@
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { ApiError } from '@app-types/index';
 
+// セッション確認用リクエストでは401時のリダイレクトをスキップするためのカスタム設定
+declare module 'axios' {
+  interface AxiosRequestConfig {
+    skipAuthRedirect?: boolean;
+  }
+}
+
 // snake_case を camelCase に変換する関数（Railsのレスポンスをフロントで使いやすくする）
 const snakeToCamel = (obj: unknown): unknown => {
   if (Array.isArray(obj)) {
@@ -16,6 +23,18 @@ const snakeToCamel = (obj: unknown): unknown => {
   return obj;
 };
 
+/**
+ * セッション状態をインメモリで管理（localStorage非依存）
+ * JWTはHttpOnly Cookieに保存されるため、JSからは直接参照しない。
+ * このフラグはページリロード時にリセットされるが、
+ * AuthContextのinitAuthでAPIコールによって復元される。
+ */
+let _hasActiveSession = false;
+
+export const setActiveSession = (active: boolean): void => {
+  _hasActiveSession = active;
+};
+
 // APIクライアントの作成
 const createApiClient = (baseURL: string): AxiosInstance => {
   const client = axios.create({
@@ -24,18 +43,12 @@ const createApiClient = (baseURL: string): AxiosInstance => {
     headers: {
       'Content-Type': 'application/json',
     },
-    withCredentials: true, // セッション管理のためCookieを送信
+    withCredentials: true, // HttpOnly Cookieを自動送信するために必須
   });
 
-  // リクエストインターセプター: JWTトークンをヘッダーに付与
+  // リクエストインターセプター: JWTはCookieで自動送信されるためヘッダー付与不要
   client.interceptors.request.use(
-    (config: InternalAxiosRequestConfig) => {
-      const token = localStorage.getItem('token');
-      if (token && config.headers) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-      return config;
-    },
+    (config: InternalAxiosRequestConfig) => config,
     (error) => Promise.reject(error)
   );
 
@@ -72,11 +85,16 @@ const createApiClient = (baseURL: string): AxiosInstance => {
       return response;
     },
     async (error: AxiosError) => {
-      // 401: 認証切れはトークンを削除してログインページへ
-      if (error.response?.status === 401) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('isAdmin');
-        window.location.href = '/login';
+      // 401: セッションが有効だった場合（認証切れ）のみログインページへリダイレクト
+      // ログイン試行中の401はリダイレクトせずエラーをそのまま返す
+      // 管理者パスの場合は /admin/login へ、ユーザーパスの場合は /login へ
+      // skipAuthRedirect が true のリクエスト（initAuth のセッション確認用）は
+      // 401時にリダイレクトしない。initAuth の GET が login() 後に返ってきても
+      // 誤リダイレクトが起きないようにする。
+      if (error.response?.status === 401 && _hasActiveSession && !error.config?.skipAuthRedirect) {
+        _hasActiveSession = false;
+        const isAdminPath = window.location.pathname.startsWith('/admin');
+        window.location.href = isAdminPath ? '/admin/login' : '/login';
       }
 
       // エラーをApiError形式に変換

@@ -86,7 +86,7 @@ class AdminAuthService
      */
     public function getAuthenticatedAdmin(): Admin
     {
-        return JWTAuth::authenticate();
+        return auth()->guard('api')->user();
     }
 
     /**

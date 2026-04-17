@@ -22,9 +22,12 @@ import ProductsPage from './pages/ProductsPage'
 import ProductDetailPage from './pages/ProductDetailPage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
+import ForgotPasswordPage from './pages/ForgotPasswordPage'
+import ResetPasswordPage from './pages/ResetPasswordPage'
 import CartPage from './pages/CartPage'
 import CheckoutPage from './pages/CheckoutPage'
 import ProfilePage from './pages/ProfilePage'
+import WishlistPage from './pages/WishlistPage'
 
 // Admin Pages
 import AdminLoginPage from './pages/admin/AdminLoginPage'
@@ -32,6 +35,8 @@ import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminProductsPage from './pages/admin/AdminProductsPage'
 import AdminProductFormPage from './pages/admin/AdminProductFormPage'
 import AdminInventoryPage from './pages/admin/AdminInventoryPage'
+import AdminReportsPage from './pages/admin/AdminReportsPage'
+import AdminAccountsPage from './pages/admin/AdminAccountsPage'
 
 import { useAuth } from './contexts/AuthContext'
 import { ReactNode } from 'react'
@@ -89,9 +94,12 @@ function App() {
                 <Route path="products/:id" element={<ProductDetailPage />} />
                 <Route path="login" element={<LoginPage />} />
                 <Route path="register" element={<RegisterPage />} />
+                <Route path="forgot-password" element={<ForgotPasswordPage />} />
+                <Route path="reset-password" element={<ResetPasswordPage />} />
                 <Route path="cart" element={<ProtectedRoute><CartPage /></ProtectedRoute>} />
                 <Route path="checkout" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
                 <Route path="profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+                <Route path="wishlist" element={<ProtectedRoute><WishlistPage /></ProtectedRoute>} />
                 <Route
                   path="*"
                   element={
@@ -112,6 +120,8 @@ function App() {
               <Route path="/admin/products/new" element={<AdminRoute><AdminProductFormPage /></AdminRoute>} />
               <Route path="/admin/products/:id/edit" element={<AdminRoute><AdminProductFormPage /></AdminRoute>} />
               <Route path="/admin/inventory" element={<AdminRoute><AdminInventoryPage /></AdminRoute>} />
+              <Route path="/admin/reports" element={<AdminRoute><AdminReportsPage /></AdminRoute>} />
+              <Route path="/admin/accounts" element={<AdminRoute><AdminAccountsPage /></AdminRoute>} />
             </Routes>
           </CartProvider>
         </AuthProvider>

@@ -36,6 +36,14 @@ export const useCategories = () => {
   });
 };
 
+export const usePopularProducts = (limit = 10) => {
+  return useQuery({
+    queryKey: ['products', 'popular', limit],
+    queryFn: () => productService.getPopularProducts(limit),
+    staleTime: 10 * 60 * 1000, // 10 minutes
+  });
+};
+
 export const useCreateProduct = () => {
   const queryClient = useQueryClient();
 

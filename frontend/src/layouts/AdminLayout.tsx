@@ -6,6 +6,8 @@ const navItems = [
   { path: '/admin/dashboard', label: 'ダッシュボード' },
   { path: '/admin/products', label: '商品管理' },
   { path: '/admin/inventory', label: '在庫管理' },
+  { path: '/admin/reports', label: 'レポート' },
+  { path: '/admin/accounts', label: 'アカウント管理' },
 ];
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
@@ -15,7 +17,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
   const handleLogout = async () => {
     await logout();
-    navigate('/admin/login');
+    navigate('/');
   };
 
   return (

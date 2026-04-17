@@ -228,6 +228,14 @@ export interface ProductListParams extends ProductFilters {
   sortBy?: ProductSortBy;
 }
 
+// ほしい物リストアイテム
+export interface WishlistItem {
+  id: number;
+  productId: number;
+  addedAt: string;
+  product: Product;
+}
+
 // APIエラー
 export interface ApiError {
   message: string;

@@ -32,8 +32,8 @@ export const ja = {
 
   // Home Page
   home: {
-    title: 'ECサイトへようこそ',
-    subtitle: 'あなたの信頼できるオンラインショッピング',
+    title: 'mahozon',
+    subtitle: 'mahozonオンライン',
     featuredProducts: '注目の商品',
     shopNow: '今すぐ購入',
     viewAllProducts: 'すべての商品を見る',
@@ -175,14 +175,14 @@ export const ja = {
 
   // Footer
   footer: {
-    description: 'あなたの信頼できるオンラインショッピング',
+    description: 'mahozon オンライン',
     quickLinks: 'クイックリンク',
     contact: 'お問い合わせ',
     email: 'メール',
     phone: '電話',
     address: '住所',
     followUs: 'フォローする',
-    copyright: '© 2025 ECサイト. All rights reserved.',
+    copyright: '© 2025 mahozon. All rights reserved.',
   },
 
   // Error Messages

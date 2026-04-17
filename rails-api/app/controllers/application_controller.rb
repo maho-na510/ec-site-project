@@ -23,11 +23,13 @@ class ApplicationController < ActionController::API
   end
 
   def authenticate_user!
-    token = request.headers['Authorization']&.split(' ')&.last
+    # HttpOnly Cookie → Authorization ヘッダー の順でJWTを取得
+    token = cookies[:access_token] || request.headers['Authorization']&.split(' ')&.last
     return render_unauthorized unless token
 
     begin
-      decoded_token = JWT.decode(token, Rails.application.credentials.secret_key_base, true, algorithm: 'HS256')
+      jwt_secret = ENV.fetch('JWT_SECRET', Rails.application.credentials.secret_key_base)
+      decoded_token = JWT.decode(token, jwt_secret, true, algorithm: 'HS256')
       @current_user = User.find(decoded_token[0]['user_id'])
     rescue JWT::DecodeError, ActiveRecord::RecordNotFound
       render_unauthorized

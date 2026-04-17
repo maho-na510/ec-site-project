@@ -21,6 +21,8 @@ const LoginPage: React.FC = () => {
 
   // Get the redirect path from location state, default to home
   const from = (location.state as any)?.from?.pathname || '/';
+  // パスワードリセット完了後のメッセージ
+  const successMessage = (location.state as any)?.message;
 
   const onSubmit = async (data: LoginFormData) => {
     setError('');
@@ -30,8 +32,13 @@ const LoginPage: React.FC = () => {
       await login(data);
       // Redirect to the page they were trying to access, or home
       navigate(from, { replace: true });
-    } catch (err) {
-      setError('ログインに失敗しました');
+    } catch (err: any) {
+      const status = err?.statusCode || err?.response?.status;
+      if (status === 401 || status === 422) {
+        setError('メールアドレスまたはパスワードが間違っています');
+      } else {
+        setError('ログインに失敗しました。しばらくしてからお試しください');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -49,6 +56,13 @@ const LoginPage: React.FC = () => {
         {/* Login Form Card */}
         <div className="bg-white rounded-lg shadow-md p-8">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            {/* パスワードリセット完了メッセージ */}
+            {successMessage && (
+              <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm">
+                {successMessage}
+              </div>
+            )}
+
             {/* Error Message */}
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">

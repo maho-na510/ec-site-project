@@ -33,11 +33,29 @@ class AuthController extends Controller
         try {
             $result = $this->authService->login($credentials);
 
+            // JWTをHttpOnly Cookieにセット（XSS対策）
+            $ttlMinutes = config('jwt.ttl', 60);
+            $cookie = cookie(
+                'admin_token',
+                $result['token'],
+                $ttlMinutes,
+                '/',
+                null,
+                app()->environment('production'), // secure: 本番のみtrue
+                true,  // httpOnly
+                false,
+                'lax'  // sameSite
+            );
+
             return response()->json([
                 'success' => true,
                 'message' => 'Login successful',
-                'data' => $result,
-            ], 200);
+                'data' => [
+                    'admin' => $result['admin'],
+                    'token_type' => $result['token_type'],
+                    'expires_in' => $result['expires_in'],
+                ],
+            ], 200)->withCookie($cookie);
         } catch (ValidationException $e) {
             return response()->json([
                 'success' => false,
@@ -65,10 +83,13 @@ class AuthController extends Controller
             $admin = $this->authService->getAuthenticatedAdmin();
             $this->authService->logout($admin);
 
+            // HttpOnly Cookieを削除
+            $expiredCookie = cookie('admin_token', '', -1, '/');
+
             return response()->json([
                 'success' => true,
                 'message' => 'Logout successful',
-            ], 200);
+            ], 200)->withCookie($expiredCookie);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,

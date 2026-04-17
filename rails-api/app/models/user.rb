@@ -15,6 +15,8 @@ class User < ApplicationRecord
   has_many :cart_items, through: :carts  # カートを経由してアイテムにアクセスできる
   has_many :orders, dependent: :destroy
   has_many :password_reset_tokens, dependent: :destroy
+  has_many :wishlist_items, dependent: :destroy
+  has_many :wishlist_products, through: :wishlist_items, source: :product
 
   # Validations
   validates :name, presence: true, length: { minimum: 2, maximum: 100 }

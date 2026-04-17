@@ -3,9 +3,11 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\V1\Admin\AuthController;
+use App\Http\Controllers\API\V1\Admin\AdminController;
 use App\Http\Controllers\API\V1\Admin\ProductController;
 use App\Http\Controllers\API\V1\Admin\InventoryController;
 use App\Http\Controllers\API\V1\Admin\ReportController;
+use App\Http\Middleware\InjectJwtFromCookie;
 
 /*
 |--------------------------------------------------------------------------
@@ -33,11 +35,17 @@ Route::prefix('v1/admin')->group(function () {
     Route::post('/auth/login', [AuthController::class, 'login'])->name('admin.login');
 
     // Protected routes (authentication required)
-    Route::middleware('auth:api')->group(function () {
+    // InjectJwtFromCookie: HttpOnly CookieのJWTをAuthorizationヘッダに変換してからJWT認証
+    Route::middleware([InjectJwtFromCookie::class, 'auth:api'])->group(function () {
         // Auth routes
         Route::post('/auth/logout', [AuthController::class, 'logout'])->name('admin.logout');
         Route::post('/auth/refresh', [AuthController::class, 'refresh'])->name('admin.refresh');
         Route::get('/auth/me', [AuthController::class, 'me'])->name('admin.me');
+
+        // Admin account management routes
+        Route::get('/admins', [AdminController::class, 'index'])->name('admin.admins.index');
+        Route::post('/admins', [AdminController::class, 'store'])->name('admin.admins.store');
+        Route::delete('/admins/{id}', [AdminController::class, 'destroy'])->name('admin.admins.destroy');
 
         // Product routes
         Route::get('/products', [ProductController::class, 'index'])->name('admin.products.index');

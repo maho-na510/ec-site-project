@@ -85,7 +85,8 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const itemCount = cart?.items.reduce((count, item) => count + item.quantity, 0) || 0;
+  // APIが返す item_count (camelCase変換後: itemCount) を優先し、フォールバックで items から集計
+  const itemCount = (cart as any)?.itemCount ?? cart?.items?.reduce((count, item) => count + item.quantity, 0) ?? 0;
   const subtotal = cart ? cartService.calculateSubtotal(cart.items) : 0;
 
   const value: CartContextType = {

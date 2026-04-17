@@ -4,7 +4,17 @@ import { Product, ProductFormData, ProductListParams, PaginatedResponse, Categor
 export const productService = {
   // User-facing product endpoints
   async getProducts(params?: ProductListParams): Promise<PaginatedResponse<Product>> {
-    const response = await userApi.get<PaginatedResponse<Product>>('/products', { params });
+    const snakeParams = params ? {
+      page: params.page,
+      per_page: params.perPage,
+      search: params.search,
+      category_id: params.categoryId,
+      sort_by: params.sortBy,
+      min_price: params.minPrice,
+      max_price: params.maxPrice,
+      in_stock: params.inStock,
+    } : undefined;
+    const response = await userApi.get<PaginatedResponse<Product>>('/products', { params: snakeParams });
     return response.data;
   },
 
@@ -22,6 +32,11 @@ export const productService = {
 
   async getCategories(): Promise<Category[]> {
     const response = await userApi.get<Category[]>('/categories');
+    return response.data;
+  },
+
+  async getPopularProducts(limit = 10): Promise<Product[]> {
+    const response = await userApi.get<Product[]>('/products/popular', { params: { limit } });
     return response.data;
   },
 

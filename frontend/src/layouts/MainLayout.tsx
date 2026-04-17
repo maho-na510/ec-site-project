@@ -17,8 +17,8 @@ export default function MainLayout() {
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div>
-              <h3 className="text-lg font-semibold mb-4">ECサイト</h3>
-              <p className="text-gray-400">あなたの信頼できるオンラインショッピング</p>
+              <h3 className="text-lg font-semibold mb-4">mahozon</h3>
+              <p className="text-gray-400">mahozon online shopping</p>
             </div>
             <div>
               <h3 className="text-lg font-semibold mb-4">クイックリンク</h3>
@@ -37,7 +37,12 @@ export default function MainLayout() {
             </div>
           </div>
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p>© 2025 ECサイト. All rights reserved.</p>
+            <p>© 2025 mahozon. All rights reserved.</p>
+            <p className="mt-2">
+              <Link to="/admin/login" className="text-gray-700 hover:text-gray-500 text-xs transition">
+                管理者
+              </Link>
+            </p>
           </div>
         </div>
       </footer>

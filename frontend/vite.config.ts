@@ -25,11 +25,15 @@ export default defineConfig({
         target: process.env.VITE_USER_API_URL || 'http://127.0.0.1:3001',
         changeOrigin: true,
         secure: false,
+        // Set-Cookie のドメイン属性を削除してブラウザが localhost で保存できるようにする
+        cookieDomainRewrite: { '*': '' },
       },
       '/api/admin': {
         target: process.env.VITE_ADMIN_API_URL || 'http://127.0.0.1:8000',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api\/admin/, '/api/v1/admin'),
+        // Set-Cookie のドメイン属性を削除してブラウザが localhost で保存できるようにする
+        cookieDomainRewrite: { '*': '' },
       },
     },
   },

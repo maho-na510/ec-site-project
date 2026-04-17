@@ -11,12 +11,21 @@ module Api
         ).authenticate
 
         if result[:success]
+          # JWTをHttpOnly Cookieにセット（XSS対策）
+          cookies[:access_token] = {
+            value: result[:access_token],
+            httponly: true,
+            secure: Rails.env.production?,
+            same_site: :lax,
+            expires: 24.hours.from_now,
+            path: '/'
+          }
+
           # result[:user] は as_json から返されたハッシュ（string keys）
           render json: {
             success: true,
             data: {
-              user: format_user_hash(result[:user]),
-              access_token: result[:access_token]
+              user: format_user_hash(result[:user])
             }
           }, status: :ok
         else
@@ -38,11 +47,20 @@ module Api
             password: params[:password]
           ).authenticate
 
+          # JWTをHttpOnly Cookieにセット
+          cookies[:access_token] = {
+            value: result[:access_token],
+            httponly: true,
+            secure: Rails.env.production?,
+            same_site: :lax,
+            expires: 24.hours.from_now,
+            path: '/'
+          }
+
           render json: {
             success: true,
             data: {
-              user: user_json(user),
-              access_token: result[:access_token]
+              user: user_json(user)
             },
             message: '登録が完了しました'
           }, status: :created
@@ -57,10 +75,11 @@ module Api
 
       # POST /api/v1/auth/logout
       def logout
-        token = extract_token_from_header
+        token = extract_token
 
         if token && current_user
           AuthenticationService.logout(current_user, token)
+          cookies.delete(:access_token, path: '/')
           render json: { success: true, message: 'ログアウトしました' }, status: :ok
         else
           render json: { success: false, error: 'ログアウトに失敗しました' }, status: :bad_request
@@ -69,7 +88,7 @@ module Api
 
       # POST /api/v1/auth/refresh
       def refresh
-        token = extract_token_from_header
+        token = extract_token
 
         unless token
           render json: { success: false, error: 'No token provided' }, status: :unauthorized
@@ -124,8 +143,9 @@ module Api
         }
       end
 
-      def extract_token_from_header
-        request.headers['Authorization']&.split(' ')&.last
+      # HttpOnly Cookie → Authorization ヘッダー の順でトークンを取得
+      def extract_token
+        cookies[:access_token] || request.headers['Authorization']&.split(' ')&.last
       end
     end
   end

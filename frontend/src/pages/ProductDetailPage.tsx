@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { Heart } from 'lucide-react';
 import { useProduct } from '../hooks/useProducts';
 import { useCart } from '../contexts/CartContext';
+import { useAuth } from '../contexts/AuthContext';
+import { useAddToWishlist, useRemoveFromWishlist, useIsInWishlist } from '../hooks/useWishlist';
 import { formatCurrency } from '../utils/format';
 import LoadingSpinner from '../components/shared/LoadingSpinner';
 import Button from '../components/shared/Button';
@@ -12,6 +15,10 @@ const ProductDetailPage: React.FC = () => {
   const productId = parseInt(id || '0');
   const { data: product, isLoading, error } = useProduct(productId);
   const { addToCart, isLoading: isAddingToCart } = useCart();
+  const { isAuthenticated } = useAuth();
+  const addToWishlist = useAddToWishlist();
+  const removeFromWishlist = useRemoveFromWishlist();
+  const isInWishlist = useIsInWishlist(productId);
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
   const [showAddedMessage, setShowAddedMessage] = useState(false);
@@ -163,32 +170,32 @@ const ProductDetailPage: React.FC = () => {
           {/* Quantity Selector */}
           {isAvailable && (
             <div className="mb-6">
-              <label className="block text-sm font-medium text-secondary-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 数量
               </label>
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center border border-secondary-300 rounded-lg">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
                   <button
                     onClick={decrementQuantity}
                     disabled={quantity <= 1}
-                    className="px-4 py-2 text-secondary-700 hover:bg-secondary-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-10 h-10 flex items-center justify-center text-lg font-medium text-gray-700 bg-white hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition"
                   >
-                    -
+                    −
                   </button>
-                  <span className="px-6 py-2 border-x border-secondary-300 min-w-[60px] text-center font-medium">
+                  <span className="w-14 h-10 flex items-center justify-center border-x border-gray-300 text-base font-semibold text-gray-900 bg-white select-none">
                     {quantity}
                   </span>
                   <button
                     onClick={incrementQuantity}
                     disabled={quantity >= product.stockQuantity}
-                    className="px-4 py-2 text-secondary-700 hover:bg-secondary-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-10 h-10 flex items-center justify-center text-lg font-medium text-gray-700 bg-white hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition"
                   >
-                    +
+                    ＋
                   </button>
                 </div>
                 {product.stockQuantity <= 10 && (
-                  <span className="text-sm text-orange-600">
-                    残りわずか
+                  <span className="text-sm text-orange-500 font-medium">
+                    残りわずか（{product.stockQuantity}点）
                   </span>
                 )}
               </div>
@@ -213,13 +220,22 @@ const ProductDetailPage: React.FC = () => {
               >
                 カートに追加
               </Button>
-              <Button
-                onClick={() => navigate('/cart')}
-                variant="outline"
-                size="lg"
+              <button
+                onClick={() => {
+                  if (!isAuthenticated) { navigate('/login'); return; }
+                  isInWishlist
+                    ? removeFromWishlist.mutate(productId)
+                    : addToWishlist.mutate(productId);
+                }}
+                className={`flex items-center gap-2 px-5 py-2 rounded-lg border text-sm font-medium transition ${
+                  isInWishlist
+                    ? 'border-red-300 bg-red-50 text-red-500 hover:bg-red-100'
+                    : 'border-gray-300 text-gray-600 hover:border-red-300 hover:text-red-500 hover:bg-red-50'
+                }`}
               >
-                カート
-              </Button>
+                <Heart className="w-5 h-5" fill={isInWishlist ? 'currentColor' : 'none'} />
+                {isInWishlist ? 'リスト済み' : 'ほしい物リスト'}
+              </button>
             </div>
 
             <Link to="/products">

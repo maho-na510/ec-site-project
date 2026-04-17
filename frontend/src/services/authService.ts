@@ -1,20 +1,25 @@
 import { userApi, adminApi } from './api';
-import { LoginFormData, RegisterFormData, LoginResponse, User, Admin } from '@app-types/index';
+import { LoginFormData, RegisterFormData, User, Admin } from '@app-types/index';
 
+/**
+ * 認証サービス
+ *
+ * セキュリティ方針:
+ * - JWTはサーバー側でHttpOnly Cookieにセットされる（XSS対策）
+ * - フロントエンドはトークン文字列を一切保持しない
+ * - ログイン状態はReact Context（インメモリ）で管理する
+ */
 export const authService = {
-  // ユーザーログイン
-  async login(credentials: LoginFormData): Promise<LoginResponse> {
-    const response = await userApi.post<LoginResponse>('/auth/login', credentials);
-    // Railsは { user, accessToken } を返す (api.tsのインターセプターでsnake→camel変換済み)
-    const data = response.data as unknown as { user: User; accessToken: string };
-    localStorage.setItem('token', data.accessToken);
-    return { user: data.user, accessToken: data.accessToken };
+  // ユーザーログイン（サーバーがHttpOnly CookieにJWTをセット）
+  async login(credentials: LoginFormData): Promise<{ user: User }> {
+    const response = await userApi.post<{ user: User }>('/auth/login', credentials);
+    return response.data as { user: User };
   },
 
   // 新規会員登録
-  async register(data: RegisterFormData): Promise<{ message: string }> {
-    const response = await userApi.post('/auth/register', data);
-    return response.data as { message: string };
+  async register(data: RegisterFormData): Promise<{ user: User }> {
+    const response = await userApi.post<{ user: User }>('/auth/register', data);
+    return response.data as { user: User };
   },
 
   // パスワードリセットのメール送信
@@ -25,7 +30,6 @@ export const authService = {
 
   // パスワードリセット実行
   async resetPassword(token: string, newPassword: string): Promise<{ message: string }> {
-    // Railsは { token, password, passwordConfirmation } を期待（snake_case変換後に password_confirmation）
     const response = await userApi.post('/passwords/reset', {
       token,
       password: newPassword,
@@ -34,59 +38,40 @@ export const authService = {
     return response.data as { message: string };
   },
 
-  // ログアウト
+  // ログアウト（サーバー側でCookieを削除）
   async logout(): Promise<void> {
-    try {
-      await userApi.post('/auth/logout');
-    } finally {
-      this.clearTokens();
-    }
+    await userApi.post('/auth/logout');
   },
 
-  // ログイン中のユーザー情報取得
+  // 管理者ログイン（サーバーがHttpOnly CookieにJWTをセット）
+  async adminLogin(credentials: LoginFormData): Promise<{ admin: Admin }> {
+    const response = await adminApi.post<{ admin: Admin }>('/auth/login', credentials);
+    return response.data as { admin: Admin };
+  },
+
+  // 管理者ログアウト（サーバー側でCookieを削除）
+  async adminLogout(): Promise<void> {
+    await adminApi.post('/auth/logout');
+  },
+
+  // ログイン中のユーザー情報取得（Cookieが有効なら成功）
+  // skipAuthRedirect: initAuth のセッション確認リクエストが login() 後に 401 で返っても
+  // 誤リダイレクトが起きないよう、401時のリダイレクトをスキップする
   async getCurrentUser(): Promise<User> {
-    const response = await userApi.get<User>('/users/me');
+    const response = await userApi.get<User>('/users/me', { skipAuthRedirect: true });
     return response.data as User;
   },
 
-  // 管理者ログイン
-  async adminLogin(credentials: LoginFormData): Promise<LoginResponse> {
-    const response = await adminApi.post<LoginResponse>('/auth/login', credentials);
-    const data = response.data as unknown as { user: Admin; accessToken: string };
-    localStorage.setItem('token', data.accessToken);
-    return { user: data.user, accessToken: data.accessToken };
-  },
-
-  // 管理者ログアウト
-  async adminLogout(): Promise<void> {
-    try {
-      await adminApi.post('/auth/logout');
-    } finally {
-      this.clearTokens();
-    }
-  },
-
-  // ログイン中の管理者情報取得
+  // ログイン中の管理者情報取得（Cookieが有効なら成功）
+  // skipAuthRedirect: 同上
   async getCurrentAdmin(): Promise<Admin> {
-    const response = await adminApi.get<Admin>('/auth/me');
+    const response = await adminApi.get<Admin>('/auth/me', { skipAuthRedirect: true });
     return response.data as Admin;
   },
 
-  // トークン管理
-  setToken(token: string): void {
-    localStorage.setItem('token', token);
-  },
-
-  clearTokens(): void {
-    localStorage.removeItem('token');
-    localStorage.removeItem('isAdmin');
-  },
-
-  getToken(): string | null {
-    return localStorage.getItem('token');
-  },
-
-  isAuthenticated(): boolean {
-    return !!this.getToken();
+  // ユーザー情報更新
+  async updateUser(data: { name?: string; address?: string; phone?: string }): Promise<User> {
+    const response = await userApi.put('/users/me', data);
+    return response.data as User;
   },
 };

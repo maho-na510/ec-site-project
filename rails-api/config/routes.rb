@@ -23,8 +23,16 @@ Rails.application.routes.draw do
       resources :products, only: [:index, :show] do
         collection do
           get 'search'
+          get 'popular'
           get 'categories/:category_id', to: 'products#by_category'
         end
+      end
+
+      # Wishlist routes
+      resource :wishlist, only: [] do
+        get 'items', to: 'wishlists#index'
+        post 'items', to: 'wishlists#add'
+        delete 'items/:product_id', to: 'wishlists#remove'
       end
 
       # Category routes
