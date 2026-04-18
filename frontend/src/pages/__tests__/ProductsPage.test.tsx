@@ -153,10 +153,10 @@ describe('ProductsPage', () => {
     render(<ProductsPage />)
 
     await waitFor(() => {
-      expect(screen.getByText('エレクトロニクス')).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'エレクトロニクス' })).toBeInTheDocument()
     })
 
-    const categoryButton = screen.getByText('エレクトロニクス')
+    const categoryButton = screen.getByRole('button', { name: 'エレクトロニクス' })
     await user.click(categoryButton)
 
     // カテゴリーフィルターがクリックされたことを確認
@@ -184,7 +184,7 @@ describe('ProductsPage', () => {
 
     render(<ProductsPage />)
 
-    expect(screen.getByPlaceholderText(/商品を検索/i)).toBeInTheDocument()
+    expect(screen.getByPlaceholderText(/商品名・キーワードで検索/i)).toBeInTheDocument()
   })
 
   it('商品がない場合のメッセージが表示される', async () => {
