@@ -30,20 +30,28 @@ vendor/
 /rails-api/config/credentials/*.key
 
 # Laravel
-/laravel-api/vendor
-/laravel-api/node_modules
-/laravel-api/public/hot
-/laravel-api/public/storage
-/laravel-api/storage/*.key
+/laravel-api/vendor/
+/laravel-api/node_modules/
 /laravel-api/.env
 /laravel-api/.env.backup
 /laravel-api/.env.production
+/laravel-api/public/hot
+/laravel-api/public/storage
+/laravel-api/storage/*.key
 /laravel-api/.phpunit.result.cache
 /laravel-api/Homestead.json
 /laravel-api/Homestead.yaml
 /laravel-api/auth.json
 /laravel-api/npm-debug.log
 /laravel-api/yarn-error.log
+
+# Laravel framework generated files
+/laravel-api/storage/framework/cache/*
+/laravel-api/storage/framework/sessions/*
+/laravel-api/storage/framework/views/*
+!/laravel-api/storage/framework/cache/.gitignore
+!/laravel-api/storage/framework/sessions/.gitignore
+!/laravel-api/storage/framework/views/.gitignore
 
 # React/Frontend
 /frontend/dist
