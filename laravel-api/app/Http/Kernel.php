@@ -40,6 +40,8 @@ class Kernel extends HttpKernel
 
         'api' => [
             \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
+            // HttpOnly CookieのJWTをAuthorizationヘッダに変換する（auth:apiより前に実行する必要あり）
+            \App\Http\Middleware\InjectJwtFromCookie::class,
             'throttle:api',
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
         ],

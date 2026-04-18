@@ -7,7 +7,6 @@ use App\Http\Controllers\API\V1\Admin\AdminController;
 use App\Http\Controllers\API\V1\Admin\ProductController;
 use App\Http\Controllers\API\V1\Admin\InventoryController;
 use App\Http\Controllers\API\V1\Admin\ReportController;
-use App\Http\Middleware\InjectJwtFromCookie;
 
 /*
 |--------------------------------------------------------------------------
@@ -34,9 +33,9 @@ Route::prefix('v1/admin')->group(function () {
     // Public routes (no authentication required)
     Route::post('/auth/login', [AuthController::class, 'login'])->name('admin.login');
 
-    // Protected routes (authentication required)
-    // InjectJwtFromCookie: HttpOnly CookieのJWTをAuthorizationヘッダに変換してからJWT認証
-    Route::middleware([InjectJwtFromCookie::class, 'auth:api'])->group(function () {
+    // Protected routes (JWT認証必須)
+    // InjectJwtFromCookie は api ミドルウェアグループで実行済み（Kernel.php 参照）
+    Route::middleware('auth:api')->group(function () {
         // Auth routes
         Route::post('/auth/logout', [AuthController::class, 'logout'])->name('admin.logout');
         Route::post('/auth/refresh', [AuthController::class, 'refresh'])->name('admin.refresh');
