@@ -35,14 +35,14 @@ export default function AdminInventoryPage() {
   const products = productsData?.data ?? [];
 
   // 在庫ログ
-  const { data: logsData, isLoading: logsLoading } = useQuery<{ data: InventoryLog[] }>({
+  const { data: logsRaw, isLoading: logsLoading } = useQuery<InventoryLog[]>({
     queryKey: ['admin', 'inventory-logs'],
     queryFn: async () => {
       const res = await adminApi.get('/inventory/logs');
-      return res.data as { data: InventoryLog[] };
+      return res.data as InventoryLog[];
     },
   });
-  const logs = logsData?.data ?? [];
+  const logs = logsRaw ?? [];
 
   // 商品名マップ (id → name)
   const productMap = React.useMemo(() => {
@@ -74,6 +74,15 @@ export default function AdminInventoryPage() {
     e.preventDefault();
     setError('');
     if (!form.productId || !form.quantity) return;
+    const qty = Number(form.quantity);
+    if (form.actionType === 'restock' && qty <= 0) {
+      setError('入荷数量は1以上の整数を入力してください');
+      return;
+    }
+    if (form.actionType === 'return' && qty <= 0) {
+      setError('返品数量は1以上の整数を入力してください');
+      return;
+    }
     adjustMutation.mutate();
   };
 
@@ -120,12 +129,12 @@ export default function AdminInventoryPage() {
             <label className="text-sm font-medium text-gray-700">操作種別</label>
             <select
               value={form.actionType}
-              onChange={(e) => setForm({ ...form, actionType: e.target.value as ActionType })}
+              onChange={(e) => setForm({ ...form, actionType: e.target.value as ActionType, quantity: '' })}
               className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="restock">入荷（数量を増やす）</option>
-              <option value="adjustment">調整（数量を変更）</option>
-              <option value="return">返品（数量を増やす）</option>
+              <option value="restock">入荷</option>
+              <option value="adjustment">調整</option>
+              <option value="return">返品</option>
             </select>
           </div>
 
@@ -137,8 +146,15 @@ export default function AdminInventoryPage() {
               onChange={(e) => setForm({ ...form, quantity: e.target.value })}
               required
               className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="例: 10（減らす場合は -10）"
+              placeholder={
+                form.actionType === 'adjustment'
+                  ? '例: 10（減らす場合は -10）'
+                  : '例: 10'
+              }
             />
+            {form.actionType === 'return' && (
+              <p className="text-xs text-gray-400">入力した数だけ在庫が減ります</p>
+            )}
           </div>
 
           <div className="flex flex-col gap-1">

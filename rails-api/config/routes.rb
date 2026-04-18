@@ -17,6 +17,7 @@ Rails.application.routes.draw do
       # User routes
       get 'users/me', to: 'users#show'
       put 'users/me', to: 'users#update'
+      put 'users/me/password', to: 'users#change_password'
       get 'users/me/orders', to: 'users#orders'
 
       # Product routes

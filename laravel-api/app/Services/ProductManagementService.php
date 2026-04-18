@@ -226,7 +226,12 @@ class ProductManagementService
      */
     private function clearProductCache(): void
     {
-        // Clear product list cache patterns
-        Cache::tags(['products'])->flush();
+        // Cache::tags はRedis/Memcachedのみ対応。fileドライバでは例外になるためスキップ。
+        // キャッシュを使い始める際は CACHE_DRIVER=redis を設定すること。
+        try {
+            Cache::tags(['products'])->flush();
+        } catch (\BadMethodCallException $e) {
+            // タグ非対応のドライバ（fileなど）では何もしない
+        }
     }
 }

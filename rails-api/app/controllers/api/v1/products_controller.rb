@@ -8,7 +8,7 @@ module Api
         page     = params[:page]&.to_i || 1
         per_page = [params[:per_page]&.to_i || 20, 100].min
 
-        products = Product.active.includes(:category, :product_images)
+        products = Product.visible.includes(:category, :product_images)
 
         # 検索フィルター
         if params[:search].present?
@@ -40,7 +40,7 @@ module Api
 
       # GET /api/v1/products/:id
       def show
-        product = Product.active
+        product = Product.visible
                         .includes(:category, :product_images)
                         .find(params[:id])
 
@@ -59,7 +59,7 @@ module Api
           return
         end
 
-        products = Product.active
+        products = Product.visible
                          .includes(:category, :product_images)
                          .where('name LIKE ? OR description LIKE ?', "%#{query}%", "%#{query}%")
                          .order(created_at: :desc)
@@ -84,7 +84,7 @@ module Api
           .limit(limit)
           .pluck(:product_id)
 
-        products_by_id = Product.active
+        products_by_id = Product.visible
           .includes(:category, :product_images)
           .where(id: popular_product_ids)
           .index_by(&:id)
@@ -94,7 +94,7 @@ module Api
         # 注文データが少ない場合は新着で補完
         if products.size < limit
           existing_ids = products.map(&:id)
-          filler = Product.active
+          filler = Product.visible
             .includes(:category, :product_images)
             .where.not(id: existing_ids)
             .order(created_at: :desc)
@@ -117,7 +117,7 @@ module Api
         per_page = [per_page, 100].min
 
         products = category.products
-                          .active
+                          .visible
                           .includes(:product_images)
                           .order(created_at: :desc)
                           .page(page)

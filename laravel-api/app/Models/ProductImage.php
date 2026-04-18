@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 
 class ProductImage extends Model
 {
@@ -19,6 +20,13 @@ class ProductImage extends Model
         'image_url',
         'display_order',
     ];
+
+    /**
+     * Attributes appended to the model's JSON output.
+     *
+     * @var array<int, string>
+     */
+    protected $appends = ['full_url'];
 
     /**
      * The attributes that should be cast.
@@ -48,6 +56,6 @@ class ProductImage extends Model
             return $this->image_url;
         }
 
-        return asset('storage/' . $this->image_url);
+        return Storage::disk('public')->url($this->image_url);
     }
 }

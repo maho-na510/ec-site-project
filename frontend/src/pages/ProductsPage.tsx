@@ -255,7 +255,9 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
         />
         {!isAvailable && (
           <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-            <span className="bg-white text-gray-900 px-3 py-1 rounded-lg text-xs font-semibold">在庫切れ</span>
+            <span className="bg-white text-gray-900 px-3 py-1 rounded-lg text-xs font-semibold">
+              {product.isSuspended ? '販売停止中' : '在庫切れ'}
+            </span>
           </div>
         )}
         {isAuthenticated && (
@@ -295,7 +297,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
                 : 'bg-gray-100 text-gray-400 cursor-not-allowed'
             }`}
           >
-            {isOutOfStock ? '在庫切れ' : 'カートに追加'}
+            {product.isSuspended ? '販売停止中' : isOutOfStock ? '在庫切れ' : 'カートに追加'}
           </button>
         </div>
       </div>

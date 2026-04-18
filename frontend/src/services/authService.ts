@@ -74,4 +74,14 @@ export const authService = {
     const response = await userApi.put('/users/me', data);
     return response.data as User;
   },
+
+  // パスワード変更（ログイン中のユーザー用）
+  async changePassword(currentPassword: string, newPassword: string, newPasswordConfirmation: string): Promise<{ message: string }> {
+    const response = await userApi.put('/users/me/password', {
+      current_password: currentPassword,
+      new_password: newPassword,
+      new_password_confirmation: newPasswordConfirmation,
+    });
+    return response.data as { message: string };
+  },
 };

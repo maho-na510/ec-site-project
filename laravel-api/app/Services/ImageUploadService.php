@@ -53,7 +53,7 @@ class ImageUploadService
         $path = $file->storeAs(
             'products/' . $product->id,
             $filename,
-            config('filesystems.default')
+            'public'
         );
 
         // Create product image record
@@ -73,8 +73,8 @@ class ImageUploadService
     public function deleteImage(ProductImage $image): bool
     {
         // Delete file from storage
-        if (Storage::exists($image->image_url)) {
-            Storage::delete($image->image_url);
+        if (Storage::disk('public')->exists($image->image_url)) {
+            Storage::disk('public')->delete($image->image_url);
         }
 
         // Delete database record

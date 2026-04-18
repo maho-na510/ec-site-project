@@ -29,6 +29,13 @@ class InventoryService
     ): Product {
         return DB::transaction(function () use ($product, $quantity, $actionType, $admin, $notes) {
             $oldQuantity = $product->stock_quantity;
+
+            // 返品は仕入れ返品（在庫を減らす）として扱う。
+            // フロントエンドは正の数で入力させ、バックエンドで自動的にマイナス変換する。
+            if ($actionType === 'return') {
+                $quantity = -abs($quantity);
+            }
+
             $newQuantity = $oldQuantity + $quantity;
 
             // Ensure stock doesn't go negative
@@ -209,13 +216,15 @@ class InventoryService
         $activeProducts = Product::active()->count();
         $outOfStockProducts = Product::outOfStock()->count();
         $lowStockProducts = Product::lowStock(10)->count();
+        $suspendedProducts = Product::where('is_suspended', true)->count();
         $totalStockValue = Product::sum(DB::raw('stock_quantity * price'));
 
         return [
-            'total_products' => $totalProducts,
-            'active_products' => $activeProducts,
-            'out_of_stock' => $outOfStockProducts,
-            'low_stock' => $lowStockProducts,
+            'total_products'    => $totalProducts,
+            'active_products'   => $activeProducts,
+            'out_of_stock_count' => $outOfStockProducts,
+            'low_stock_count'   => $lowStockProducts,
+            'suspended_count'   => $suspendedProducts,
             'total_stock_value' => round($totalStockValue, 2),
         ];
     }

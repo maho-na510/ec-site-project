@@ -99,7 +99,7 @@ const ProductDetailPage: React.FC = () => {
             {!isAvailable && (
               <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
                 <span className="bg-white text-secondary-900 px-6 py-3 rounded-lg font-semibold text-lg">
-                  {isOutOfStock ? '在庫切れ' : '在庫切れ'}
+                  {product.isSuspended ? '販売停止中' : '在庫切れ'}
                 </span>
               </div>
             )}
@@ -151,12 +151,15 @@ const ProductDetailPage: React.FC = () => {
                   在庫あり ({product.stockQuantity})
                 </span>
               </div>
+            ) : product.isSuspended ? (
+              <div className="flex items-center space-x-2">
+                <span className="inline-block w-3 h-3 bg-orange-500 rounded-full"></span>
+                <span className="text-orange-600 font-medium">販売停止中</span>
+              </div>
             ) : (
               <div className="flex items-center space-x-2">
                 <span className="inline-block w-3 h-3 bg-error rounded-full"></span>
-                <span className="text-error font-medium">
-                  {isOutOfStock ? '在庫切れ' : '在庫切れ'}
-                </span>
+                <span className="text-error font-medium">在庫切れ</span>
               </div>
             )}
           </div>

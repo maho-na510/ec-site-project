@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Heart, ShoppingCart, Trash2, Edit2, Check, X } from 'lucide-react';
+import { Heart, ShoppingCart, Trash2, Edit2, Check, X, KeyRound, ChevronDown } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useOrders } from '../hooks/useOrders';
 import { useWishlist, useRemoveFromWishlist } from '../hooks/useWishlist';
@@ -28,6 +28,15 @@ const ProfilePage: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
   const [saveError, setSaveError] = useState('');
+
+  // パスワード変更
+  const [isPasswordOpen, setIsPasswordOpen] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [newPasswordConfirm, setNewPasswordConfirm] = useState('');
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [passwordMessage, setPasswordMessage] = useState('');
+  const [passwordError, setPasswordError] = useState('');
 
   const { data: ordersData, isLoading: ordersLoading } = useOrders(currentPage, 10);
   const { data: wishlist, isLoading: wishlistLoading } = useWishlist();
@@ -74,6 +83,33 @@ const ProfilePage: React.FC = () => {
   const cancelEditing = () => {
     setIsEditing(false);
     setSaveError('');
+  };
+
+  const handleChangePassword = async () => {
+    setPasswordError('');
+    if (newPassword.length < 6) {
+      setPasswordError('新しいパスワードは6文字以上で入力してください');
+      return;
+    }
+    if (newPassword !== newPasswordConfirm) {
+      setPasswordError('新しいパスワードが一致しません');
+      return;
+    }
+    setIsChangingPassword(true);
+    try {
+      await authService.changePassword(currentPassword, newPassword, newPasswordConfirm);
+      setPasswordMessage('パスワードを変更しました');
+      setCurrentPassword('');
+      setNewPassword('');
+      setNewPasswordConfirm('');
+      setIsPasswordOpen(false);
+      setTimeout(() => setPasswordMessage(''), 4000);
+    } catch (err: any) {
+      const msg = err?.response?.data?.error || 'パスワードの変更に失敗しました';
+      setPasswordError(msg);
+    } finally {
+      setIsChangingPassword(false);
+    }
   };
 
   const handleSave = async () => {
@@ -237,6 +273,93 @@ const ProfilePage: React.FC = () => {
                 <InfoRow label="住所" value={userInfo.address || '未設定'} />
                 <InfoRow label="電話番号" value={userInfo.phone || '未設定'} />
                 <InfoRow label="登録日" value={formatDate(userInfo.createdAt, 'PPP')} />
+              </div>
+            )}
+
+            {/* パスワード変更セクション */}
+            {!isEditing && (
+              <div className="mt-6 border-t border-gray-100 pt-6">
+                {passwordMessage && (
+                  <div className="mb-4 px-4 py-3 bg-green-50 border border-green-200 text-green-700 text-sm rounded-lg">
+                    {passwordMessage}
+                  </div>
+                )}
+                <button
+                  onClick={() => {
+                    setIsPasswordOpen((prev) => !prev);
+                    setPasswordError('');
+                    setCurrentPassword('');
+                    setNewPassword('');
+                    setNewPasswordConfirm('');
+                  }}
+                  className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-blue-600 transition"
+                >
+                  <KeyRound className="w-4 h-4" />
+                  パスワードを変更する
+                  <ChevronDown className={`w-4 h-4 transition-transform ${isPasswordOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                {isPasswordOpen && (
+                  <div className="mt-4 space-y-3">
+                    {passwordError && (
+                      <div className="px-4 py-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg">
+                        {passwordError}
+                      </div>
+                    )}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">現在のパスワード</label>
+                      <input
+                        type="password"
+                        value={currentPassword}
+                        onChange={(e) => setCurrentPassword(e.target.value)}
+                        autoComplete="current-password"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">新しいパスワード</label>
+                      <input
+                        type="password"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        autoComplete="new-password"
+                        placeholder="6文字以上"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">新しいパスワード（確認）</label>
+                      <input
+                        type="password"
+                        value={newPasswordConfirm}
+                        onChange={(e) => setNewPasswordConfirm(e.target.value)}
+                        autoComplete="new-password"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div className="flex gap-3 pt-1">
+                      <button
+                        onClick={handleChangePassword}
+                        disabled={isChangingPassword || !currentPassword || !newPassword || !newPasswordConfirm}
+                        className="flex items-center gap-1.5 px-5 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition"
+                      >
+                        <Check className="w-4 h-4" />
+                        {isChangingPassword ? '変更中...' : 'パスワードを変更'}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setIsPasswordOpen(false);
+                          setPasswordError('');
+                        }}
+                        disabled={isChangingPassword}
+                        className="flex items-center gap-1.5 px-5 py-2 border border-gray-300 text-gray-600 text-sm font-medium rounded-lg hover:bg-gray-50 disabled:opacity-50 transition"
+                      >
+                        <X className="w-4 h-4" />
+                        キャンセル
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>

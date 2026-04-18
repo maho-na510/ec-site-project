@@ -1,7 +1,7 @@
 module Api
   module V1
     class UsersController < ApplicationController
-      before_action :set_user, only: [:show, :update]
+      before_action :set_user, only: [:show, :update, :change_password]
 
       # GET /api/v1/users/me
       def show
@@ -23,6 +23,38 @@ module Api
           render json: {
             success: false,
             error: 'Update failed',
+            errors: @user.errors.messages
+          }, status: :unprocessable_entity
+        end
+      end
+
+      # PUT /api/v1/users/me/password
+      def change_password
+        current_password = params[:current_password]
+        new_password = params[:new_password]
+        new_password_confirmation = params[:new_password_confirmation]
+
+        unless current_password.present? && new_password.present? && new_password_confirmation.present?
+          render json: { success: false, error: 'All fields are required' }, status: :bad_request
+          return
+        end
+
+        unless @user.authenticate(current_password)
+          render json: { success: false, error: '現在のパスワードが正しくありません' }, status: :unprocessable_entity
+          return
+        end
+
+        unless new_password == new_password_confirmation
+          render json: { success: false, error: '新しいパスワードが一致しません' }, status: :unprocessable_entity
+          return
+        end
+
+        if @user.update(password: new_password, password_confirmation: new_password_confirmation)
+          render json: { success: true, message: 'パスワードを変更しました' }, status: :ok
+        else
+          render json: {
+            success: false,
+            error: 'Password update failed',
             errors: @user.errors.messages
           }, status: :unprocessable_entity
         end

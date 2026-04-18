@@ -90,7 +90,7 @@ export default function AdminDashboard() {
           linkTo="/admin/inventory"
         />
         <StatCard
-          label="在庫少"
+          label="在庫少（10個以下）"
           value={stats?.lowStockCount ?? '-'}
           highlight={(stats?.lowStockCount ?? 0) > 0}
           linkTo="/admin/inventory"

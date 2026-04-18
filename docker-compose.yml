@@ -89,11 +89,13 @@ services:
       REDIS_PORT: 6379
       JWT_SECRET: your-super-secret-jwt-key-change-in-production
       FRONTEND_URL: http://localhost:5173
+      APP_URL: http://localhost:8000
     ports:
       - "8000:8000"
     volumes:
       - ./laravel-api:/var/www/html
       - laravel_vendor:/var/www/html/vendor
+      - ./laravel-api/docker/php.ini:/usr/local/etc/php/conf.d/custom.ini
     depends_on:
       mysql:
         condition: service_healthy
@@ -101,7 +103,7 @@ services:
         condition: service_healthy
     networks:
       - ec-site-network
-    command: php artisan serve --host=0.0.0.0 --port=8000
+    command: bash -c "mkdir -p storage/app/public && php artisan storage:link --force 2>/dev/null || true && php artisan serve --host=0.0.0.0 --port=8000"
 
   # Laravel Scheduler - 毎分 php artisan schedule:run を実行する
   # Laravel のタスクスケジューラーは「毎分 schedule:run を呼ぶ」という設計のため、

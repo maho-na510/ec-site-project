@@ -17,6 +17,8 @@ class Product < ApplicationRecord
 
   # Scopes
   scope :active, -> { where(is_active: true, is_suspended: false, deleted_at: nil) }
+  # ユーザー向け: 公開中（販売停止中も含む）。削除・非公開のみ除外
+  scope :visible, -> { where(is_active: true, deleted_at: nil) }
   scope :suspended, -> { where(is_suspended: true) }
   scope :in_stock, -> { where('stock_quantity > ?', 0) }
   scope :out_of_stock, -> { where(stock_quantity: 0) }
