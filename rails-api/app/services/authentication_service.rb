@@ -1,5 +1,7 @@
 # AuthenticationService - handles user login and token generation
 class AuthenticationService
+  require 'digest'
+
   # JWT configuration
   JWT_SECRET = ENV.fetch('JWT_SECRET', Rails.application.credentials.secret_key_base)
   JWT_ALGORITHM = 'HS256'
@@ -52,24 +54,21 @@ class AuthenticationService
     }
   end
 
-  # Verify and decode access token
+  # Verify and decode access token, then confirm session exists in Redis
+  # JWTが有効でも Redis にセッションがなければ認証失敗（ログアウト済みトークンを無効化）
   def self.verify_token(token)
     payload = decode_token(token)
     return nil unless payload
 
-    # Check if session exists in Redis
-    session_key = "session:user:#{payload['user_id']}:#{token[0..15]}"
+    session_key = session_key_for(payload['user_id'], token)
     return nil unless $redis.exists?(session_key)
 
     User.active.find_by(id: payload['user_id'])
   end
 
-  # Logout user
+  # Logout user: Redis からセッションを削除（以降は旧トークンでのアクセスを拒否）
   def self.logout(user, token)
-    # Remove session from Redis
-    session_key = "session:user:#{user.id}:#{token[0..15]}"
-    $redis.del(session_key)
-
+    $redis.del(session_key_for(user.id, token))
     { success: true, message: 'Logged out successfully' }
   end
 
@@ -82,16 +81,22 @@ class AuthenticationService
   end
 
   # Store session in Redis
+  # キーに MD5(token) を使うことで各トークンを一意に識別する
+  # （token[0..15] だと HS256 JWTの先頭が固定値になり全ユーザーで衝突する）
   def store_session(user, token)
-    session_key = "session:user:#{user.id}:#{token[0..15]}"
+    session_key = self.class.session_key_for(user.id, token)
     session_data = {
-      user_id: user.id,
-      email: user.email,
-      created_at: Time.current.to_s,
+      user_id:      user.id,
+      email:        user.email,
+      created_at:   Time.current.to_s,
       last_accessed: Time.current.to_s
     }
 
-    $redis.setex(session_key, 24.hours.to_i, session_data.to_json)
+    $redis.setex(session_key, ACCESS_TOKEN_EXPIRY.to_i, session_data.to_json)
+  end
+
+  def self.session_key_for(user_id, token)
+    "session:user:#{user_id}:#{Digest::MD5.hexdigest(token)}"
   end
 
   private

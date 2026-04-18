@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import { BrowserRouter } from 'react-router-dom'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import Header from '../Header'
 
 // useAuth をモック
@@ -41,7 +42,20 @@ const defaultAuthMock = {
   refreshUser: jest.fn(),
 }
 
-const renderHeader = () => render(<BrowserRouter><Header /></BrowserRouter>)
+// useCategories (useQuery) をモック — ヘッダーのカテゴリ検索に必要
+jest.mock('../../hooks/useProducts', () => ({
+  useCategories: () => ({ data: [], isLoading: false }),
+}))
+
+const createQueryClient = () => new QueryClient({
+  defaultOptions: { queries: { retry: false } },
+})
+
+const renderHeader = () => render(
+  <QueryClientProvider client={createQueryClient()}>
+    <BrowserRouter><Header /></BrowserRouter>
+  </QueryClientProvider>
+)
 
 describe('Header', () => {
   beforeEach(() => {
@@ -54,7 +68,7 @@ describe('Header', () => {
 
     renderHeader()
 
-    expect(screen.getByText('ECサイト')).toBeInTheDocument()
+    expect(screen.getByText('mahozon')).toBeInTheDocument()
     expect(screen.getByText('ホーム')).toBeInTheDocument()
     expect(screen.getByText('商品一覧')).toBeInTheDocument()
     expect(screen.getByText('ログイン')).toBeInTheDocument()

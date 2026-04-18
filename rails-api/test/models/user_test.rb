@@ -37,7 +37,8 @@ class UserTest < ActiveSupport::TestCase
   end
 
   test "should validate email format" do
-    invalid_emails = %w[user@example user.example.com @example.com user@]
+    # URI::MailTo::EMAIL_REGEXP は RFC5321 準拠のため user@example は有効な形式として扱われる
+    invalid_emails = %w[user.example.com @example.com user@]
     invalid_emails.each do |invalid_email|
       @user.email = invalid_email
       assert_not @user.valid?, "#{invalid_email} should be invalid"
@@ -90,15 +91,16 @@ class UserTest < ActiveSupport::TestCase
   end
 
   test "should soft delete user" do
-    @user.destroy
-    assert_not_nil @user.deleted_at
-    assert_not User.find_by(id: @user.id)
-    assert User.with_deleted.find_by(id: @user.id)
+    @user.soft_delete
+    assert_not_nil @user.reload.deleted_at
+    assert @user.deleted?
+    # active スコープには含まれない
+    assert_not User.active.include?(@user)
   end
 
-  test "should exclude deleted users from default scope" do
+  test "should exclude deleted users from active scope" do
     deleted_user = users(:deleted)
     assert_not_nil deleted_user.deleted_at
-    assert_not User.all.include?(deleted_user)
+    assert_not User.active.include?(deleted_user)
   end
 end

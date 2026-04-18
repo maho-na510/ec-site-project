@@ -23,10 +23,12 @@ class OrderTest < ActiveSupport::TestCase
   end
 
   test "should require unique order_number" do
-    duplicate_order = @order.dup
-    @order.save
-    assert_not duplicate_order.valid?
-    assert_includes duplicate_order.errors[:order_number], "has already been taken"
+    # 既存レコードを別オーダーと同じ番号に更新しようとするとバリデーションエラーになる
+    # （新規作成時は generate_order_number が自動で一意番号を生成するためテスト不可）
+    other_order = orders(:two)
+    @order.order_number = other_order.order_number
+    assert_not @order.valid?
+    assert_includes @order.errors[:order_number], "has already been taken"
   end
 
   test "should require total_amount" do
@@ -79,8 +81,7 @@ class OrderTest < ActiveSupport::TestCase
       user: @user,
       total_amount: 100.00,
       status: "pending",
-      shipping_address: "123 Test St",
-      payment_method: "credit_card"
+      shipping_address: "123 Test St"
     )
     new_order.save
 
@@ -89,7 +90,7 @@ class OrderTest < ActiveSupport::TestCase
   end
 
   test "should filter by status" do
-    pending_orders = Order.with_status("pending")
+    pending_orders = Order.by_status("pending")
     assert pending_orders.all? { |o| o.status == "pending" }
   end
 

@@ -51,7 +51,7 @@ class ProductTest < ActiveSupport::TestCase
   end
 
   test "should have many images" do
-    assert_respond_to @product, :images
+    assert_respond_to @product, :product_images
   end
 
   test "should have many order_items" do
@@ -96,7 +96,7 @@ class ProductTest < ActiveSupport::TestCase
   end
 
   test "should filter available products" do
-    available_products = Product.available
+    available_products = Product.active
     available_products.each do |product|
       assert product.is_active
       assert_not product.is_suspended

@@ -31,6 +31,10 @@ class Product < ApplicationRecord
     is_active && !is_suspended && deleted_at.nil? && stock_quantity > 0
   end
 
+  def in_stock?
+    stock_quantity > 0
+  end
+
   # Check if sufficient stock is available
   def sufficient_stock?(quantity)
     stock_quantity >= quantity
@@ -92,6 +96,3 @@ class Product < ApplicationRecord
     self.price = price.round(2) if price.present?
   end
 end
-
-# Custom error class
-class InsufficientStockError < StandardError; end

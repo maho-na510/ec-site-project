@@ -1,12 +1,4 @@
 class InsufficientStockError < StandardError
-  def initialize(product_name, requested, available)
-    @product_name = product_name
-    @requested = requested
-    @available = available
-    super(message)
-  end
-
-  def message
-    "Insufficient stock for #{@product_name}. Requested: #{@requested}, Available: #{@available}"
-  end
+  # message を直接受け取る形式（StandardError と同じインタフェース）
+  # 例: raise InsufficientStockError, "Insufficient stock for #{name}"
 end

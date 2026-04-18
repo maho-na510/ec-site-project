@@ -1,13 +1,17 @@
 require "test_helper"
 
+# 注意: GET リクエストに params と as: :json を同時に渡すと Rails が POST として扱うことがある
+# GET + params の場合は as: :json を省略し、Accept ヘッダーを明示する
 class Api::V1::ProductsControllerTest < ActionDispatch::IntegrationTest
+  ACCEPT_JSON = { 'Accept' => 'application/json' }.freeze
+
   setup do
     @product = products(:one)
     @category = categories(:one)
   end
 
   test "should get index without authentication" do
-    get api_v1_products_url, as: :json
+    get '/api/v1/products', headers: ACCEPT_JSON
 
     assert_response :success
     assert json_response['success']
@@ -16,7 +20,7 @@ class Api::V1::ProductsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should get product details" do
-    get api_v1_product_url(@product), as: :json
+    get "/api/v1/products/#{@product.id}", headers: ACCEPT_JSON
 
     assert_response :success
     assert json_response['success']
@@ -25,7 +29,7 @@ class Api::V1::ProductsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should search products" do
-    get search_api_v1_products_url, params: { query: @product.name }, as: :json
+    get '/api/v1/products/search', params: { query: @product.name }, headers: ACCEPT_JSON
 
     assert_response :success
     assert json_response['success']
@@ -33,14 +37,14 @@ class Api::V1::ProductsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should return error for empty search query" do
-    get search_api_v1_products_url, params: { query: '' }, as: :json
+    get '/api/v1/products/search', params: { query: '' }, headers: ACCEPT_JSON
 
     assert_response :bad_request
     assert_not json_response['success']
   end
 
   test "should get products by category" do
-    get api_v1_products_url + "/categories/#{@category.id}", as: :json
+    get "/api/v1/products/categories/#{@category.id}", headers: ACCEPT_JSON
 
     assert_response :success
     assert json_response['success']
@@ -48,7 +52,7 @@ class Api::V1::ProductsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should paginate products" do
-    get api_v1_products_url, params: { page: 1, per_page: 5 }, as: :json
+    get '/api/v1/products', params: { page: 1, per_page: 5 }, headers: ACCEPT_JSON
 
     assert_response :success
     assert json_response['meta']['per_page'] <= 5

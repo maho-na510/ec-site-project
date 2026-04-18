@@ -8,7 +8,7 @@ class Order < ApplicationRecord
   # Validations
   validates :order_number, presence: true, uniqueness: true
   validates :total_amount, presence: true,
-                           numericality: { greater_than_or_equal_to: 0 }
+                           numericality: { greater_than: 0 }
   validates :status, presence: true,
                      inclusion: { in: %w[pending processing completed cancelled] }
   validates :shipping_address, presence: true

@@ -1,11 +1,13 @@
 # Redis configuration for session store and caching
 # Redis connection is configured through cache_store in environment files
 
-# Initialize Redis connection for general use
+# テスト環境は DB 1 を使い、開発環境 (DB 0) と分離する
+default_db = Rails.env.test? ? 1 : 0
+
 redis_config = {
   host: ENV.fetch('REDIS_HOST', 'localhost'),
-  port: ENV.fetch('REDIS_PORT', 6379),
-  db: ENV.fetch('REDIS_DB', 0)
+  port: ENV.fetch('REDIS_PORT', 6379).to_i,
+  db:   ENV.fetch('REDIS_DB', default_db).to_i
 }
 
 $redis = Redis.new(redis_config)

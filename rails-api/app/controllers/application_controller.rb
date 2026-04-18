@@ -27,13 +27,10 @@ class ApplicationController < ActionController::API
     token = cookies[:access_token] || request.headers['Authorization']&.split(' ')&.last
     return render_unauthorized unless token
 
-    begin
-      jwt_secret = ENV.fetch('JWT_SECRET', Rails.application.credentials.secret_key_base)
-      decoded_token = JWT.decode(token, jwt_secret, true, algorithm: 'HS256')
-      @current_user = User.find(decoded_token[0]['user_id'])
-    rescue JWT::DecodeError, ActiveRecord::RecordNotFound
-      render_unauthorized
-    end
+    # JWT検証 + Redisセッション存在確認の両方を通過した場合のみ認証成功
+    # ログアウト済みトークンはRedisから削除されるため、ここで弾かれる
+    @current_user = AuthenticationService.verify_token(token)
+    render_unauthorized unless @current_user
   end
 
   def current_user

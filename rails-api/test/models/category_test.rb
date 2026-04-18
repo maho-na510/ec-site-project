@@ -27,12 +27,11 @@ class CategoryTest < ActiveSupport::TestCase
     assert @category.products.count > 0
   end
 
-  test "should destroy associated products when destroyed" do
-    product_count = @category.products.count
-    assert product_count > 0
-
+  test "should restrict deletion when products exist" do
+    # dependent: :restrict_with_error のため、商品がある場合はカテゴリを削除できない
+    assert @category.products.count > 0
     @category.destroy
-
-    assert_equal 0, Product.where(category_id: @category.id).count
+    assert @category.errors[:base].any?, "商品があるカテゴリは削除できないはず"
+    assert Category.exists?(@category.id), "カテゴリはまだ存在するはず"
   end
 end

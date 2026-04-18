@@ -28,7 +28,7 @@ class Api::V1::CartsControllerTest < ActionDispatch::IntegrationTest
     # 注意：products(:one) はフィクスチャのカートにすでに入っているので products(:three) を使う
     # 同じ商品をもう一度追加しようとすると数量が増えるだけで items.any? の確認はできる
     # でもフィクスチャの状態に依存するテストは壊れやすいので別商品を使う方が安全
-    post api_v1_cart_items_url,
+    post items_api_v1_cart_url,
       headers: auth_headers(@user),
       params: { product_id: products(:three).id, quantity: 1 },
       as: :json
@@ -39,7 +39,7 @@ class Api::V1::CartsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should not add item with insufficient stock" do
-    post api_v1_cart_items_url,
+    post items_api_v1_cart_url,
       headers: auth_headers(@user),
       params: { product_id: @product.id, quantity: 99999 },
       as: :json
@@ -81,7 +81,7 @@ class Api::V1::CartsControllerTest < ActionDispatch::IntegrationTest
     cart = @user.carts.create!
     cart.cart_items.create!(product: @product, quantity: 1)
 
-    delete api_v1_cart_clear_url,
+    delete clear_api_v1_cart_url,
       headers: auth_headers(@user),
       as: :json
 

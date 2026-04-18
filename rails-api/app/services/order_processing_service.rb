@@ -7,10 +7,9 @@ class OrderProcessingService
   end
 
   def execute
-    # カートのバリデーション
-    validation = CartService.new(@user).validate_cart
-    unless validation[:valid]
-      return { success: false, error: validation[:error] }
+    # カートの空チェック（コントローラーでも検証済みだが、サービス単体でも安全に動作するよう確認）
+    unless @cart.cart_items.any?
+      return { success: false, error: 'Cart is empty' }
     end
 
     # 配送先住所のチェック
@@ -34,7 +33,7 @@ class OrderProcessingService
 
       {
         success: true,
-        order: order.as_json,
+        order: order,
         message: 'Order placed successfully'
       }
     rescue InsufficientStockError => e

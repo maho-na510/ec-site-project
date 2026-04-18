@@ -4,7 +4,6 @@ one:
   total_amount: 99.99
   status: pending
   shipping_address: 123 Test Street, Test City, TS 12345
-  payment_method: credit_card
 
 two:
   user: one
@@ -12,7 +11,6 @@ two:
   total_amount: 149.98
   status: completed
   shipping_address: 123 Test Street, Test City, TS 12345
-  payment_method: credit_card
 
 three:
   user: two
@@ -20,4 +18,3 @@ three:
   total_amount: 49.99
   status: processing
   shipping_address: 456 Another St, Test City, TS 54321
-  payment_method: paypal

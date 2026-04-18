@@ -1,20 +1,23 @@
 require "test_helper"
 
+# CartItem は Cart に紐づく（User に直接紐づくわけではない）
+# CartItem.cart_id がキーで、cart.user_id でユーザーを辿る
 class CartItemTest < ActiveSupport::TestCase
   def setup
     @cart_item = cart_items(:one)
     @user = users(:one)
     @product = products(:one)
+    @cart = carts(:one)
   end
 
   test "should be valid with valid attributes" do
     assert @cart_item.valid?
   end
 
-  test "should require user" do
-    @cart_item.user = nil
+  test "should require cart" do
+    @cart_item.cart = nil
     assert_not @cart_item.valid?
-    assert_includes @cart_item.errors[:user], "must exist"
+    assert_includes @cart_item.errors[:cart], "must exist"
   end
 
   test "should require product" do
@@ -35,9 +38,9 @@ class CartItemTest < ActiveSupport::TestCase
     assert_includes @cart_item.errors[:quantity], "must be greater than 0"
   end
 
-  test "should belong to user" do
-    assert_respond_to @cart_item, :user
-    assert_equal @user, @cart_item.user
+  test "should belong to cart" do
+    assert_respond_to @cart_item, :cart
+    assert_equal @cart, @cart_item.cart
   end
 
   test "should belong to product" do
@@ -45,9 +48,9 @@ class CartItemTest < ActiveSupport::TestCase
     assert_equal @product, @cart_item.product
   end
 
-  test "should not allow duplicate product for same user" do
+  test "should not allow duplicate product in same cart" do
     duplicate_item = CartItem.new(
-      user: @cart_item.user,
+      cart: @cart_item.cart,
       product: @cart_item.product,
       quantity: 1
     )
@@ -55,10 +58,10 @@ class CartItemTest < ActiveSupport::TestCase
     assert_includes duplicate_item.errors[:product_id], "has already been taken"
   end
 
-  test "should allow same product for different users" do
-    different_user = users(:two)
+  test "should allow same product in different carts" do
+    other_cart = carts(:two)
     new_item = CartItem.new(
-      user: different_user,
+      cart: other_cart,
       product: @cart_item.product,
       quantity: 1
     )
@@ -70,15 +73,12 @@ class CartItemTest < ActiveSupport::TestCase
     assert_equal expected_subtotal, @cart_item.subtotal
   end
 
-  test "should validate quantity against stock" do
+  test "should reject out-of-stock product" do
     out_of_stock_product = products(:out_of_stock)
     @cart_item.product = out_of_stock_product
     @cart_item.quantity = 1
 
-    # This assumes you have stock validation
-    # Adjust based on your actual implementation
-    if @cart_item.respond_to?(:validate_stock_availability)
-      assert_not @cart_item.valid?
-    end
+    assert_not @cart_item.valid?
+    assert_includes @cart_item.errors[:product], "is not available for purchase"
   end
 end
