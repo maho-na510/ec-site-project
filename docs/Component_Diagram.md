@@ -45,14 +45,17 @@
 App.tsx
   └─ MainLayout（ヘッダー・フッターを持つ）
        ├─ HomePage（トップページ）
-       ├─ ProductsPage（商品一覧）
+       ├─ ProductsPage（商品一覧・カテゴリ絞り込み・検索）
        │    └─ ProductCard × n（商品カード）
-       ├─ ProductDetailPage（商品詳細）
+       ├─ ProductDetailPage（商品詳細・カートに追加）
        ├─ LoginPage（ログイン）
        ├─ RegisterPage（会員登録）
-       ├─ CartPage（カート）
+       ├─ ForgotPasswordPage（パスワードリセット申請）
+       ├─ ResetPasswordPage（パスワード再設定）
+       ├─ CartPage（カート一覧・数量変更・削除）
        ├─ CheckoutPage（注文確認・決済）
-       ├─ ProfilePage（マイページ）
+       ├─ ProfilePage（マイページ・注文履歴）
+       ├─ WishlistPage（お気に入り一覧）
        └─ 404ページ
 ```
 
@@ -62,10 +65,12 @@ App.tsx
 App.tsx
   └─ AdminLayout（サイドバーナビゲーション）
        ├─ AdminLoginPage（管理者ログイン）※LayoutなしのPublicページ
-       ├─ AdminDashboard（ダッシュボード・在庫統計）
-       ├─ AdminProductsPage（商品一覧・停止・削除）
-       ├─ AdminProductFormPage（商品登録・編集）
-       └─ AdminInventoryPage（在庫調整・履歴）
+       ├─ AdminDashboard（ダッシュボード・在庫統計サマリー）
+       ├─ AdminProductsPage（商品一覧・販売停止・削除）
+       ├─ AdminProductFormPage（商品登録・編集・画像アップロード）
+       ├─ AdminInventoryPage（在庫調整・履歴確認）
+       ├─ AdminAccountsPage（管理者アカウント一覧・作成）
+       └─ AdminReportsPage（CSVレポート一覧・ダウンロード）
 ```
 
 ### 共通コンポーネント（src/components/shared/）
