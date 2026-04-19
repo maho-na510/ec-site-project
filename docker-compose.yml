@@ -90,6 +90,8 @@ services:
       JWT_SECRET: your-super-secret-jwt-key-change-in-production
       FRONTEND_URL: http://localhost:5173
       APP_URL: http://localhost:8000
+      SESSION_DRIVER: redis
+      SESSION_CONNECTION: default
     ports:
       - "8000:8000"
     volumes:

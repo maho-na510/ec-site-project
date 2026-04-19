@@ -129,7 +129,8 @@ class ReportGenerationServiceTest extends TestCase
         // 古いファイルのタイムスタンプを変更（31日前）
         // Storage::fake はファイルの更新日時変更ができないため、
         // cleanup の戻り値でファイル削除数のロジックを確認する
-        $deletedCount = $this->service->cleanupOldReports(0); // days=0 で全削除
+        // days=-1 → cutoff = 明日 → 全ファイルが対象になる
+        $deletedCount = $this->service->cleanupOldReports(-1);
         $this->assertEquals(2, $deletedCount);
     }
 }

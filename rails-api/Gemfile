@@ -46,6 +46,7 @@ group :development, :test do
   gem "pry-rails", "~> 0.3"
 
   # Testing
+  gem "minitest", "~> 5.16"  # Rails 7.1と互換性のあるバージョンに固定
   gem "factory_bot_rails", "~> 6.4"
   gem "faker", "~> 3.2"
 end

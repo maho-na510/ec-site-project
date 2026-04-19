@@ -109,7 +109,7 @@ test:
 	docker compose run --rm laravel-api php artisan test
 	@echo "================================"
 	@echo "Running Frontend tests..."
-	docker compose run --rm frontend npm test -- --run
+	docker compose run --rm frontend npm test -- --watchAll=false
 	@echo "================================"
 	@echo "All tests complete!"
 
@@ -126,7 +126,7 @@ test-laravel:
 # Run Frontend tests only
 test-frontend:
 	@echo "Running Frontend tests..."
-	docker compose run --rm frontend npm test -- --run
+	docker compose run --rm frontend npm test -- --watchAll=false
 
 # Run E2E tests
 test-e2e:

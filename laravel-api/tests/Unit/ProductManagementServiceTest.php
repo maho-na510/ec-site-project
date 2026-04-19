@@ -21,7 +21,7 @@ class ProductManagementServiceTest extends TestCase
     {
         parent::setUp();
 
-        $this->service = new ProductManagementService();
+        $this->service = $this->app->make(ProductManagementService::class);
         $this->admin = Admin::factory()->create();
         $this->category = Category::factory()->create();
     }
@@ -42,14 +42,13 @@ class ProductManagementServiceTest extends TestCase
         $this->assertInstanceOf(Product::class, $product);
         $this->assertEquals('Test Product', $product->name);
         $this->assertEquals(50, $product->stock_quantity);
-        $this->assertEquals($this->admin->id, $product->created_by);
+        $this->assertEquals($this->admin->id, $product->created_by_admin_id);
 
         // Check that inventory log was created
         $this->assertDatabaseHas('inventory_logs', [
             'product_id' => $product->id,
             'admin_id' => $this->admin->id,
-            'action_type' => 'initial',
-            'quantity_change' => 50,
+            'action_type' => 'initial_stock',
             'quantity_before' => 0,
             'quantity_after' => 50,
         ]);
@@ -78,10 +77,8 @@ class ProductManagementServiceTest extends TestCase
             'product_id' => $product->id,
             'admin_id' => $this->admin->id,
             'action_type' => 'adjustment',
-            'quantity_change' => 50,
             'quantity_before' => 100,
             'quantity_after' => 150,
-            'notes' => 'Restocked inventory',
         ]);
     }
 

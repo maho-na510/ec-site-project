@@ -103,8 +103,8 @@ class InventoryServiceTest extends TestCase
         $stats = $this->inventoryService->getInventoryStatistics();
 
         $this->assertArrayHasKey('total_products', $stats);
-        $this->assertArrayHasKey('out_of_stock', $stats);
-        $this->assertArrayHasKey('low_stock', $stats);
+        $this->assertArrayHasKey('out_of_stock_count', $stats);
+        $this->assertArrayHasKey('low_stock_count', $stats);
         $this->assertGreaterThan(0, $stats['total_products']);
     }
 }
