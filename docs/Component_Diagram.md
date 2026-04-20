@@ -80,7 +80,7 @@ App.tsx
 | Button | ボタン。variantでスタイルを変えられる |
 | Input | テキスト入力欄。ラベル・エラー表示つき |
 | Modal | モーダルダイアログ |
-| LoadingSpinner | 読み込み中の挙動 |
+| LoadingSpinner | ローディング表示 |
 | Pagination | ページネーション |
 | Table | テーブル表示 |
 | Alert | アラートメッセージ |
@@ -93,20 +93,29 @@ App.tsx
 config/routes.rb
   └─ namespace :api → namespace :v1
        ├─ AuthController
-       │    └─ POST /login, POST /logout, POST /register
+       │    └─ POST /auth/login, POST /auth/logout, POST /auth/register, POST /auth/refresh
+       ├─ PasswordsController
+       │    └─ POST /passwords/forgot, POST /passwords/reset
+       ├─ UsersController
+       │    └─ GET /users/me, PUT /users/me, PUT /users/me/password, GET /users/me/orders
        ├─ ProductsController
-       │    └─ GET /products, GET /products/:id
+       │    └─ GET /products, GET /products/:id, GET /products/search, GET /products/popular
+       │         GET /products/categories/:category_id
+       ├─ CategoriesController
+       │    └─ GET /categories, GET /categories/:id
+       ├─ WishlistsController
+       │    └─ GET /wishlist/items, POST /wishlist/items, DELETE /wishlist/items/:product_id
        ├─ CartsController
-       │    └─ GET /cart, POST /cart/items, PATCH /cart/items/:id, DELETE
-       ├─ OrdersController
-       │    └─ GET /orders, POST /orders, POST /orders/:id/cancel
-       └─ UsersController
-            └─ GET /users/me, PATCH /users/me
+       │    └─ GET /cart, POST /cart/items, PUT /cart/items/:id, DELETE /cart/items/:id
+       └─ OrdersController
+            └─ GET /orders, GET /orders/:id, POST /orders, POST /orders/:id/cancel
 
 app/services/
-  ├─ OrderProcessingService  （注文処理・在庫デクリメント・ロック）
+  ├─ OrderProcessingService  （注文処理・在庫デクリメント・悲観的ロック）
   ├─ CartService             （カートの追加・変更・バリデーション）
   ├─ AuthenticationService   （JWTトークン生成・検証）
+  ├─ RegistrationService     （会員登録・バリデーション）
+  ├─ PasswordResetService    （リセットトークン発行・パスワード更新）
   └─ PaymentService          （決済処理・今回はモック）
 ```
 
@@ -118,26 +127,30 @@ app/services/
 routes/api.php
   └─ prefix: api/v1/admin → middleware: auth:api
        ├─ AuthController
-       │    └─ POST /auth/login, POST /auth/logout, GET /auth/me
+       │    └─ POST /auth/login, POST /auth/logout, POST /auth/refresh, GET /auth/me
+       ├─ AdminController
+       │    └─ GET /admins, POST /admins, DELETE /admins/:id
        ├─ ProductController
-       │    └─ CRUD + PATCH /products/:id/toggle-suspension
+       │    └─ GET/POST/PUT/DELETE /products, GET /products/low-stock
+       │         PATCH /products/:id/toggle-suspension
        ├─ InventoryController
-       │    └─ POST /inventory/:id/adjust, GET /inventory/logs
+       │    └─ POST /inventory/:id/adjust, GET /inventory/:id/history
+       │         GET /inventory/logs, GET /inventory/statistics
        └─ ReportController
-            └─ POST /reports/inventory, GET /reports/download
+            └─ POST /reports/inventory, GET /reports, GET /reports/download
 
 app/Services/
   ├─ ProductManagementService  （商品CRUD・画像アップロード）
-  ├─ InventoryService          （在庫調整・ログ記録）
+  ├─ InventoryService          （在庫調整・ログ記録・統計集計）
   ├─ ReportGenerationService   （CSV生成・管理者ごとの出力）
-  ├─ AdminAuthService          （JWT認証）
-  └─ ImageUploadService        （画像ファイルの保存）
+  ├─ AdminAuthService          （JWT認証・HttpOnly Cookie発行）
+  └─ ImageUploadService        （画像ファイルの保存・削除）
 
 app/Console/
   └─ Commands/
-       ├─ GenerateInventoryReport  （毎日9時に実行）
-       ├─ GenerateWeeklySummary
-       └─ CleanupReports
+       ├─ GenerateInventoryReport  （毎日9時に在庫CSVを出力）
+       ├─ GenerateWeeklySummary    （週次サマリー）
+       └─ CleanupReports           （古いレポートファイルの削除）
 ```
 
 ---

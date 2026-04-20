@@ -15,7 +15,7 @@ erDiagram
     users ||--o{ carts : "持つ"
     users ||--o{ orders : "注文する"
     users ||--o{ wishlist_items : "お気に入りに追加"
-    users ||--o{ password_reset_tokens : "発行される"
+    users ||--o{ password_reset_tokens : "発行する"
 
     carts ||--o{ cart_items : "含む"
     cart_items }o--|| products : "参照"
