@@ -44,6 +44,7 @@ help:
 # Initial setup - run this once when first cloning the project
 setup:
 	@echo "Setting up EC Site project..."
+	@[ -f .env ] || cp .env.example .env
 	@echo "Building Docker containers..."
 	docker compose build
 	@echo "Creating database..."
