@@ -58,10 +58,12 @@ class Product < ApplicationRecord
     reload  # インスタンスを最新状態に更新
   end
 
-  # Add stock
+   # Add stock (atomic SQL increment to avoid stale in-memory values)
   def add_stock!(quantity)
-    update!(stock_quantity: stock_quantity + quantity)
+    self.class.where(id: id).update_all("stock_quantity = stock_quantity + #{quantity.to_i}")
+    reload
   end
+
 
   # Soft delete
   def soft_delete

@@ -1,4 +1,3 @@
-# 注文処理サービス - 在庫の同時購入を防ぐためにトランザクションとロックを使う
 class OrderProcessingService
   def initialize(user, params)
     @user = user
@@ -7,12 +6,10 @@ class OrderProcessingService
   end
 
   def execute
-    # カートの空チェック（コントローラーでも検証済みだが、サービス単体でも安全に動作するよう確認）
     unless @cart.cart_items.any?
       return { success: false, error: 'Cart is empty' }
     end
 
-    # 配送先住所のチェック
     unless @params[:shipping_address].present?
       return { success: false, error: 'Shipping address is required' }
     end
@@ -24,11 +21,11 @@ class OrderProcessingService
         lock_and_validate_inventory
         order = create_order
         deduct_inventory(order)
-        process_payment(order)
         @cart.checkout!
       end
 
-      # トランザクション外でメール送信などを行う（今回はコメントアウト）
+      process_payment(order)
+
       # send_confirmation_email(order)
 
       {
@@ -41,6 +38,14 @@ class OrderProcessingService
     rescue ActiveRecord::RecordInvalid => e
       { success: false, error: e.message }
     rescue StandardError => e
+      # 決済失敗など: 注文が作成済みであればキャンセルして在庫を戻す
+      if order
+        begin
+          order.cancel!
+        rescue => cancel_error
+          Rails.logger.error "Failed to cancel order #{order.id}: #{cancel_error.message}"
+        end
+      end
       Rails.logger.error "Order processing failed: #{e.message}"
       Rails.logger.error e.backtrace.join("\n")
       { success: false, error: 'Order processing failed. Please try again.' }
@@ -49,10 +54,12 @@ class OrderProcessingService
 
   private
 
-  # 在庫をロックして確認する（FOR UPDATEで同時に別の注文が来ても上書きされないようにする）
   def lock_and_validate_inventory
     @locked_products = {}
-    @cart.cart_items.each do |item|
+
+    # 常にID昇順でロック → 全トランザクションが同じ順序でロックするのでデッドロックが起きない
+    sorted_items = @cart.cart_items.sort_by(&:product_id)
+    sorted_items.each do |item|
       product = Product.lock('FOR UPDATE').find(item.product_id)
 
       unless product.sufficient_stock?(item.quantity)
@@ -60,12 +67,10 @@ class OrderProcessingService
               "Insufficient stock for #{product.name}. Only #{product.stock_quantity} available."
       end
 
-      # ロック済みオブジェクトをキャッシュ（後でARクエリキャッシュを経由しないように）
       @locked_products[item.product_id] = product
     end
   end
 
-  # 注文レコードを作成する
   def create_order
     order = Order.new(
       user: @user,
@@ -73,9 +78,7 @@ class OrderProcessingService
       status: 'pending'
     )
 
-    # Create order items from cart items
     @cart.cart_items.each do |cart_item|
-      # ロック済み商品から価格を取得（ここで最新価格を固定する）
       product = @locked_products[cart_item.product_id] || cart_item.product
       order.order_items.build(
         product: product,
@@ -88,13 +91,10 @@ class OrderProcessingService
     order
   end
 
-  # 在庫を減らす
   def deduct_inventory(order)
     order.order_items.each do |item|
-      # ロック済みオブジェクトを使い、ARクエリキャッシュの古い値を避ける
       product = @locked_products[item.product_id]
 
-      # SQLで直接デクリメント（在庫が足りる場合だけ更新される）
       rows_updated = Product.where(id: product.id)
                             .where('stock_quantity >= ?', item.quantity)
                             .update_all("stock_quantity = stock_quantity - #{item.quantity.to_i}")
@@ -108,7 +108,6 @@ class OrderProcessingService
     end
   end
 
-  # 決済処理（今回はモック）
   def process_payment(order)
     payment_method = @params[:payment_method] || 'credit_card'
 
@@ -137,7 +136,6 @@ class OrderProcessingService
   end
 
   def send_confirmation_email(order)
-    # 本来はバックグラウンドジョブで送る
     # OrderMailer.confirmation(order).deliver_later
     Rails.logger.info "Order confirmation email sent for order #{order.order_number}"
   end
