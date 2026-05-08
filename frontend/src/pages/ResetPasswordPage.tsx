@@ -44,8 +44,8 @@ const ResetPasswordPage: React.FC = () => {
       return;
     }
 
-    if (password.length < 6) {
-      setError('パスワードは6文字以上で入力してください');
+    if (password.length < 8 || !/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
+      setError('パスワードは8文字以上、英字・数字を含めてください');
       return;
     }
 
@@ -73,7 +73,7 @@ const ResetPasswordPage: React.FC = () => {
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-secondary-900 mb-2">新しいパスワードを設定</h1>
-          <p className="text-secondary-600">6文字以上のパスワードを入力してください</p>
+          <p className="text-secondary-600">8文字以上のパスワードを入力してください</p>
         </div>
 
         <div className="bg-white rounded-lg shadow-md p-8">

@@ -87,8 +87,8 @@ const ProfilePage: React.FC = () => {
 
   const handleChangePassword = async () => {
     setPasswordError('');
-    if (newPassword.length < 6) {
-      setPasswordError('新しいパスワードは6文字以上で入力してください');
+    if (newPassword.length < 8 || !/[A-Za-z]/.test(newPassword) || !/[0-9]/.test(newPassword)) {
+      setPasswordError('新しいパスワードは8文字以上、英字・数字を含めてください');
       return;
     }
     if (newPassword !== newPasswordConfirm) {

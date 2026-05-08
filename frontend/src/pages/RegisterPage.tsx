@@ -27,8 +27,8 @@ const RegisterPage: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const response = await authService.register(data);
-      setSuccessMessage(response.message || '登録が完了しました');
+      await authService.register(data);
+      setSuccessMessage('登録が完了しました');
 
       setTimeout(() => {
         navigate('/login', {
@@ -118,13 +118,18 @@ const RegisterPage: React.FC = () => {
             <Input
               label="パスワード"
               type="password"
-              placeholder="パスワード（6文字以上）"
+              placeholder="パスワード（8文字以上、英字・数字を含む）"
               error={errors.password?.message}
-              helperText="6文字以上で入力してください"
+              helperText="8文字以上、英字・数字を含めてください"
               fullWidth
               {...register('password', {
                 required: 'パスワードを入力してください',
-                minLength: { value: 6, message: 'パスワードは6文字以上で入力してください' },
+                minLength: { value: 8, message: 'パスワードは8文字以上で入力してください' },
+                validate: (value) => {
+                  if (!/[A-Za-z]/.test(value)) return 'パスワードには英字を含めてください';
+                  if (!/[0-9]/.test(value)) return 'パスワードには数字を含めてください';
+                  return true;
+                },
               })}
             />
 
