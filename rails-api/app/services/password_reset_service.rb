@@ -50,20 +50,21 @@ class PasswordResetService
       return { success: false, error: 'Password confirmation does not match' }
     end
 
-    # Update password
-    if user.update(password: @params[:password], password_confirmation: @params[:password_confirmation])
-      # Mark token as used
-      token.mark_as_used!
+    begin
+      ActiveRecord::Base.transaction do
+        user.update!(password: @params[:password], password_confirmation: @params[:password_confirmation])
+        token.mark_as_used!
+      end
 
-      # Invalidate all existing sessions
+      # Redisはトランザクション外（DBロールバックの影響を受けないため）
       invalidate_all_sessions(user)
 
       {
         success: true,
         message: 'Password reset successfully. Please log in with your new password.'
       }
-    else
-      { success: false, errors: user.errors.messages }
+    rescue ActiveRecord::RecordInvalid => e
+      { success: false, errors: e.record.errors.messages }
     end
   end
 
