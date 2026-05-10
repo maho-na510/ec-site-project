@@ -53,7 +53,8 @@ setup:
 	@sleep 10
 	@echo "Running Rails migrations..."
 	docker compose run --rm rails-api bundle install
-	docker compose run --rm rails-api bundle exec rake db:create db:migrate
+	-docker compose run --rm rails-api bundle exec rake db:create
+	docker compose run --rm rails-api bundle exec rake db:migrate
 	@echo "Running Laravel migrations..."
 	docker compose run --rm laravel-api composer install
 	docker compose run --rm laravel-api php artisan migrate
