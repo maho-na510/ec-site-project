@@ -84,7 +84,7 @@ module Api
       private
 
       def generate_reset_token(user)
-        token = SecureRandom.urlsafe_base64(32)
+        token = SecureRandom.uuid
         reset_key = "password_reset:#{token}"
 
         Redis.current.setex(
