@@ -41,11 +41,17 @@ class OrderProcessingService
       # 決済失敗など: 注文が作成済みであればキャンセルして在庫を戻す
       if order
         begin
-          order.cancel!
+          ActiveRecord::Base.transaction do
+            order.cancel!
+          end
         rescue => cancel_error
           Rails.logger.error "Failed to cancel order #{order.id}: #{cancel_error.message}"
         end
       end
+      Rails.logger.error "Order processing failed: #{e.message}"
+      Rails.logger.error e.backtrace.join("\n")
+      { success: false, error: 'Order processing failed. Please try again.' }
+    end
       Rails.logger.error "Order processing failed: #{e.message}"
       Rails.logger.error e.backtrace.join("\n")
       { success: false, error: 'Order processing failed. Please try again.' }

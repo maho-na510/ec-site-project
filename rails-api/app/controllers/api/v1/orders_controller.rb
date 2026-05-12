@@ -99,19 +99,21 @@ module Api
           return
         end
 
-        if @order.cancel!
-          render json: {
-            success: true,
-            data: order_json(@order),
-            message: '注文をキャンセルしました'
-          }, status: :ok
-        else
-          render json: {
-            success: false,
-            error: 'Failed to cancel order',
-            errors: @order.errors.messages
-          }, status: :unprocessable_entity
+        ActiveRecord::Base.transaction do
+          @order.cancel!
         end
+
+        render json: {
+          success: true,
+          data: order_json(@order),
+          message: '注文をキャンセルしました'
+        }, status: :ok
+      rescue => e
+        render json: {
+          success: false,
+          error: 'Failed to cancel order',
+          message: e.message
+        }, status: :unprocessable_entity
       end
 
       private
