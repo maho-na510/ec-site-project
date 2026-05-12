@@ -7,6 +7,7 @@ use App\Services\ReportGenerationService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 
 class ReportController extends Controller
 {
@@ -43,10 +44,12 @@ class ReportController extends Controller
                 'error' => $result['error'] ?? 'Unknown error',
             ], 500);
         } catch (\Exception $e) {
+            Log::error('Failed to generate inventory report: ' . $e->getMessage());
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to generate inventory report',
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred.',
             ], 500);
         }
     }
@@ -84,10 +87,11 @@ class ReportController extends Controller
                 'error' => $result['error'] ?? 'Unknown error',
             ], 500);
         } catch (\Exception $e) {
+            Log::error('Failed to generate sales report: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to generate sales report',
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred.',
             ], 500);
         }
     }
@@ -116,10 +120,11 @@ class ReportController extends Controller
 
             return Storage::download($filepath);
         } catch (\Exception $e) {
+            Log::error('Failed to download report: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to download report',
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred.',
             ], 500);
         }
     }
@@ -139,10 +144,11 @@ class ReportController extends Controller
                 'data' => $reports,
             ], 200);
         } catch (\Exception $e) {
+            Log::error('Failed to fetch reports: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to fetch reports',
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred.',
             ], 500);
         }
     }
@@ -169,10 +175,11 @@ class ReportController extends Controller
                 'deleted_count' => $deletedCount,
             ], 200);
         } catch (\Exception $e) {
+            Log::error('Failed to cleanup reports: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to cleanup reports',
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred.',
             ], 500);
         }
     }

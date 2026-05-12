@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Services\AdminAuthService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
@@ -17,12 +18,6 @@ class AuthController extends Controller
         $this->authService = $authService;
     }
 
-    /**
-     * Admin login.
-     *
-     * @param Request $request
-     * @return JsonResponse
-     */
     public function login(Request $request): JsonResponse
     {
         $credentials = $request->validate([
@@ -33,7 +28,6 @@ class AuthController extends Controller
         try {
             $result = $this->authService->login($credentials);
 
-            // JWTをHttpOnly Cookieにセット（XSS対策）
             $ttlMinutes = config('jwt.ttl', 60);
             $cookie = cookie(
                 'admin_token',
@@ -41,10 +35,10 @@ class AuthController extends Controller
                 $ttlMinutes,
                 '/',
                 null,
-                app()->environment('production'), // secure: 本番のみtrue
-                true,  // httpOnly
+                app()->environment('production'),
+                true,
                 false,
-                'lax'  // sameSite
+                'lax'
             );
 
             return response()->json([
@@ -63,27 +57,21 @@ class AuthController extends Controller
                 'errors' => $e->errors(),
             ], 401);
         } catch (\Exception $e) {
+            Log::error('Admin login failed: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Login failed',
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred.',
             ], 500);
         }
     }
 
-    /**
-     * Admin logout.
-     *
-     * @param Request $request
-     * @return JsonResponse
-     */
     public function logout(Request $request): JsonResponse
     {
         try {
             $admin = $this->authService->getAuthenticatedAdmin();
             $this->authService->logout($admin);
 
-            // HttpOnly Cookieを削除
             $expiredCookie = cookie('admin_token', '', -1, '/');
 
             return response()->json([
@@ -91,19 +79,15 @@ class AuthController extends Controller
                 'message' => 'Logout successful',
             ], 200)->withCookie($expiredCookie);
         } catch (\Exception $e) {
+            Log::error('Admin logout failed: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Logout failed',
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred.',
             ], 500);
         }
     }
 
-    /**
-     * Refresh admin token.
-     *
-     * @return JsonResponse
-     */
     public function refresh(): JsonResponse
     {
         try {
@@ -115,19 +99,15 @@ class AuthController extends Controller
                 'data' => $result,
             ], 200);
         } catch (\Exception $e) {
+            Log::error('Admin token refresh failed: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Token refresh failed',
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred.',
             ], 500);
         }
     }
 
-    /**
-     * Get authenticated admin info.
-     *
-     * @return JsonResponse
-     */
     public function me(): JsonResponse
     {
         try {
@@ -143,10 +123,11 @@ class AuthController extends Controller
                 ],
             ], 200);
         } catch (\Exception $e) {
+            Log::error('Admin me failed: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to get admin info',
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred.',
             ], 500);
         }
     }
