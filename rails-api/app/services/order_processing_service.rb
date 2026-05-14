@@ -52,10 +52,6 @@ class OrderProcessingService
       Rails.logger.error e.backtrace.join("\n")
       { success: false, error: 'Order processing failed. Please try again.' }
     end
-      Rails.logger.error "Order processing failed: #{e.message}"
-      Rails.logger.error e.backtrace.join("\n")
-      { success: false, error: 'Order processing failed. Please try again.' }
-    end
   end
 
   private
