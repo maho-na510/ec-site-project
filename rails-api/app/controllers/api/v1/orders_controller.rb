@@ -108,7 +108,7 @@ module Api
           data: order_json(@order),
           message: '注文をキャンセルしました'
         }, status: :ok
-      rescue => e
+      rescue ActiveRecord::RecordInvalid => e
         render json: {
           success: false,
           error: 'Failed to cancel order',
