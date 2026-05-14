@@ -35,57 +35,19 @@ module Api
 
       # POST /api/v1/orders
       def create
-        cart = current_user.carts.active.first
-
-        unless cart&.cart_items&.any?
-          render json: {
-            success: false,
-            error: 'Cart is empty',
-            message: 'カートに商品がありません'
-          }, status: :unprocessable_entity
-          return
-        end
-
-        unless params[:shipping_address].present?
-          render json: {
-            success: false,
-            error: 'Shipping address is required',
-            message: '配送先住所を入力してください'
-          }, status: :unprocessable_entity
-          return
-        end
-
         result = OrderProcessingService.new(current_user, {
           shipping_address: params[:shipping_address],
           payment_method: params[:payment_method] || 'credit_card'
         }).execute
 
         if result[:success]
-          render json: {
-            success: true,
-            data: order_detail_json(result[:order]),
-            message: '注文が完了しました'
-          }, status: :created
+          render json: { success: true, data: order_detail_json(result[:order]), message: '注文が完了しました' }, status: :created
         else
-          render json: {
-            success: false,
-            error: 'Order creation failed',
-            message: result[:error]
-          }, status: :unprocessable_entity
+          render json: { success: false, error: result[:error] }, status: :unprocessable_content
         end
-      rescue InsufficientStockError => e
-        render json: {
-          success: false,
-          error: 'Insufficient stock',
-          message: e.message
-        }, status: :unprocessable_entity
       rescue StandardError => e
         Rails.logger.error "Order creation error: #{e.message}"
-        render json: {
-          success: false,
-          error: 'Order creation failed',
-          message: '注文処理中にエラーが発生しました'
-        }, status: :internal_server_error
+        render json: { success: false, error: '注文処理中にエラーが発生しました' }, status: :internal_server_error
       end
 
       # POST /api/v1/orders/:id/cancel
@@ -95,7 +57,7 @@ module Api
             success: false,
             error: 'Cannot cancel order',
             message: "このステータスの注文はキャンセルできません（#{@order.status}）"
-          }, status: :unprocessable_entity
+          }, status: :unprocessable_content
           return
         end
 
@@ -110,7 +72,7 @@ module Api
             success: false,
             error: 'Failed to cancel order',
             errors: @order.errors.messages
-          }, status: :unprocessable_entity
+          }, status: :unprocessable_content
         end
       end
 
