@@ -10,16 +10,6 @@ use Illuminate\Support\Collection;
 
 class InventoryService
 {
-    /**
-     * Adjust product stock quantity.
-     *
-     * @param Product $product
-     * @param int $quantity
-     * @param string $actionType
-     * @param Admin $admin
-     * @param string|null $notes
-     * @return Product
-     */
     public function adjustStock(
         Product $product,
         int $quantity,
@@ -27,85 +17,58 @@ class InventoryService
         Admin $admin,
         ?string $notes = null
     ): Product {
-        return DB::transaction(function () use ($product, $quantity, $actionType, $admin, $notes) {
-            $oldQuantity = $product->stock_quantity;
+        $oldQuantity = $product->stock_quantity;
 
-            // 返品は仕入れ返品（在庫を減らす）として扱う。
-            // フロントエンドは正の数で入力させ、バックエンドで自動的にマイナス変換する。
-            if ($actionType === 'return') {
-                $quantity = -abs($quantity);
-            }
+        if ($actionType === 'return') {
+            $quantity = -abs($quantity);
+        }
 
-            $newQuantity = $oldQuantity + $quantity;
+        $newQuantity = $oldQuantity + $quantity;
 
-            // Ensure stock doesn't go negative
-            if ($newQuantity < 0) {
-                throw new \InvalidArgumentException('Stock quantity cannot be negative');
-            }
+        if ($newQuantity < 0) {
+            throw new \InvalidArgumentException('Stock quantity cannot be negative');
+        }
 
-            // Update product stock
-            $product->update(['stock_quantity' => $newQuantity]);
+        $product->update(['stock_quantity' => $newQuantity]);
 
-            // Log the change
-            $this->logInventoryChange(
-                $product,
-                $oldQuantity,
-                $newQuantity,
-                $actionType,
-                $admin,
-                $notes
-            );
+        $this->logInventoryChange(
+            $product,
+            $oldQuantity,
+            $newQuantity,
+            $actionType,
+            $admin,
+            $notes
+        );
 
-            return $product->fresh();
-        });
+        return $product->fresh();
     }
 
-    /**
-     * Set product stock to a specific quantity.
-     *
-     * @param Product $product
-     * @param int $quantity
-     * @param Admin $admin
-     * @param string|null $notes
-     * @return Product
-     */
     public function setStock(
         Product $product,
         int $quantity,
         Admin $admin,
         ?string $notes = null
     ): Product {
-        return DB::transaction(function () use ($product, $quantity, $admin, $notes) {
-            $oldQuantity = $product->stock_quantity;
+        $oldQuantity = $product->stock_quantity;
 
-            if ($quantity < 0) {
-                throw new \InvalidArgumentException('Stock quantity cannot be negative');
-            }
+        if ($quantity < 0) {
+            throw new \InvalidArgumentException('Stock quantity cannot be negative');
+        }
 
-            // Update product stock
-            $product->update(['stock_quantity' => $quantity]);
+        $product->update(['stock_quantity' => $quantity]);
 
-            // Log the change
-            $this->logInventoryChange(
-                $product,
-                $oldQuantity,
-                $quantity,
-                InventoryLog::ACTION_ADJUSTMENT,
-                $admin,
-                $notes ?? 'Stock set to ' . $quantity
-            );
+        $this->logInventoryChange(
+            $product,
+            $oldQuantity,
+            $quantity,
+            InventoryLog::ACTION_ADJUSTMENT,
+            $admin,
+            $notes ?? 'Stock set to ' . $quantity
+        );
 
-            return $product->fresh();
-        });
+        return $product->fresh();
     }
 
-    /**
-     * Bulk adjust stock for multiple products.
-     *
-     * @param array $adjustments
-     * @param Admin $admin
-     * @return Collection
-     */
     public function bulkAdjustStock(array $adjustments, Admin $admin): Collection
     {
         return DB::transaction(function () use ($adjustments, $admin) {
@@ -129,17 +92,6 @@ class InventoryService
         });
     }
 
-    /**
-     * Log an inventory change.
-     *
-     * @param Product $product
-     * @param int $quantityBefore
-     * @param int $quantityAfter
-     * @param string $actionType
-     * @param Admin|null $admin
-     * @param string|null $notes
-     * @return InventoryLog
-     */
     public function logInventoryChange(
         Product $product,
         int $quantityBefore,
@@ -158,13 +110,6 @@ class InventoryService
         ]);
     }
 
-    /**
-     * Get inventory logs for a product.
-     *
-     * @param Product $product
-     * @param int $limit
-     * @return Collection
-     */
     public function getProductInventoryHistory(Product $product, int $limit = 50): Collection
     {
         return $product->inventoryLogs()
@@ -174,14 +119,6 @@ class InventoryService
             ->get();
     }
 
-    /**
-     * Get inventory logs within a date range.
-     *
-     * @param \DateTime $startDate
-     * @param \DateTime $endDate
-     * @param array $filters
-     * @return Collection
-     */
     public function getInventoryLogs(
         \DateTime $startDate,
         \DateTime $endDate,
@@ -205,11 +142,6 @@ class InventoryService
         return $query->orderBy('created_at', 'desc')->get();
     }
 
-    /**
-     * Get inventory statistics.
-     *
-     * @return array
-     */
     public function getInventoryStatistics(): array
     {
         $totalProducts = Product::count();
@@ -220,21 +152,15 @@ class InventoryService
         $totalStockValue = Product::sum(DB::raw('stock_quantity * price'));
 
         return [
-            'total_products'    => $totalProducts,
-            'active_products'   => $activeProducts,
+            'total_products'     => $totalProducts,
+            'active_products'    => $activeProducts,
             'out_of_stock_count' => $outOfStockProducts,
-            'low_stock_count'   => $lowStockProducts,
-            'suspended_count'   => $suspendedProducts,
-            'total_stock_value' => round($totalStockValue, 2),
+            'low_stock_count'    => $lowStockProducts,
+            'suspended_count'    => $suspendedProducts,
+            'total_stock_value'  => round($totalStockValue, 2),
         ];
     }
 
-    /**
-     * Get products that need restocking.
-     *
-     * @param int $threshold
-     * @return Collection
-     */
     public function getProductsNeedingRestock(int $threshold = 10): Collection
     {
         return Product::with(['category'])
