@@ -55,4 +55,14 @@ Rails.application.configure do
 
   # Dockerコンテナ内からのアクセスを許可する
   config.hosts << "rails-api"
+
+  # メール送信設定（MailpitコンテナのSMTPサーバーに向ける）
+  config.action_mailer.delivery_method = :smtp
+  config.action_mailer.smtp_settings = {
+    address: ENV.fetch('MAILPIT_HOST', 'mailpit'),
+    port: 1025
+  }
+  config.action_mailer.default_url_options = {
+    host: ENV.fetch('FRONTEND_URL', 'http://localhost:5173')
+  }
 end
