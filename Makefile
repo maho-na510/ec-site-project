@@ -60,7 +60,6 @@ setup:
 	docker compose run --rm laravel-api composer install
 	docker compose run --rm laravel-api php artisan migrate
 	@echo "Installing frontend dependencies..."
-	docker compose run --rm frontend npm install
 	@echo "Seeding database..."
 	$(MAKE) seed
 	@echo "Setup complete! Run 'make start' to start the application."
