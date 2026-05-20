@@ -15,10 +15,17 @@ RED='\033[0;31m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
+# 依存サービスが起動していることを確認
+echo -e "${YELLOW}サービスを起動中...${NC}"
+docker compose up -d --wait mysql redis mailpit
+echo ""
+
 # Rails テスト
+# RAILS_ENV=test を明示しないと docker-compose.yml の RAILS_ENV=development が使われ
+# deliver_later が :async アダプターで実際にメール送信を試みてフリーズする
 echo -e "${YELLOW}[1/3] Rails API テストを実行中...${NC}"
 echo "------------------------------------------"
-if docker compose exec -T rails-api bundle exec rails test; then
+if docker compose run --rm -e RAILS_ENV=test rails-api bundle exec rails test; then
     echo -e "${GREEN}✓ Rails テスト成功${NC}"
     RAILS_SUCCESS=true
 else
@@ -30,7 +37,7 @@ echo ""
 # Laravel テスト
 echo -e "${YELLOW}[2/3] Laravel API テストを実行中...${NC}"
 echo "------------------------------------------"
-if docker compose exec -T laravel-api php artisan test; then
+if docker compose run --rm laravel-api php artisan test; then
     echo -e "${GREEN}✓ Laravel テスト成功${NC}"
     LARAVEL_SUCCESS=true
 else
@@ -42,7 +49,7 @@ echo ""
 # Frontend テスト
 echo -e "${YELLOW}[3/3] Frontend テストを実行中...${NC}"
 echo "------------------------------------------"
-if docker compose exec -T frontend npm test -- --ci --coverage=false; then
+if docker compose run --rm frontend npm test -- --ci --coverage=false; then
     echo -e "${GREEN}✓ Frontend テスト成功${NC}"
     FRONTEND_SUCCESS=true
 else

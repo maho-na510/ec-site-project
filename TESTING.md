@@ -17,12 +17,26 @@
 
 ### Rails（ユーザー向けAPI） — minitest
 
+> **注意**: `docker-compose.yml` に `RAILS_ENV: development` が設定されているため、
+> Rails テストは必ず `-e RAILS_ENV=test` を付けて実行してください。
+> 付けないと development 設定が使われ、`deliver_later` が実際にメール送信を試みてフリーズします。
+
 ```bash
+# 初回 or スキーマ変更後（テストDBのセットアップ）
+make test-setup
+# または
+docker compose run --rm -e RAILS_ENV=test rails-api bundle exec rails db:create db:schema:load
+
 # 全部実行
-docker compose exec rails-api bundle exec rails test
+make test-rails
+# または
+docker compose run --rm -e RAILS_ENV=test rails-api bundle exec rails test
 
 # ファイルを指定して実行
-docker compose exec rails-api bundle exec rails test test/models/product_test.rb
+docker compose run --rm -e RAILS_ENV=test rails-api bundle exec rails test test/models/product_test.rb
+
+# テストを指定して実行
+docker compose run --rm -e RAILS_ENV=test rails-api bundle exec rails test test/controllers/api/v1/orders_controller_test.rb
 ```
 
 #### Small（モデル・サービス）
@@ -130,6 +144,9 @@ npm run test:e2e:headless
 ## まとめて実行
 
 ```bash
+# 初回のみ: テストDBをセットアップ
+make test-setup
+
 # Rails + Laravel + Frontend（Jest）を順番に実行
 make test
 
@@ -156,18 +173,33 @@ make coverage
 
 ## テストがうまくいかないとき
 
-**Railsのテストが失敗する場合**：
+**Railsのテストがフリーズする場合**：
+`-e RAILS_ENV=test` が付いているか確認してください。付いていないと development 設定でメール送信を試みてフリーズします。
 ```bash
-docker compose exec rails-api bundle exec rails db:test:prepare
+# 正しいコマンド
+docker compose run --rm -e RAILS_ENV=test rails-api bundle exec rails test
+```
+
+**Railsのテストが失敗する場合（テストDBの問題）**：
+```bash
+make test-setup
+# または
+docker compose run --rm -e RAILS_ENV=test rails-api bundle exec rails db:create db:schema:load
+```
+
+**マイグレーション後にテストが失敗する場合**：
+`make migrate` を使うとテスト DB のスキーマも自動で同期されます。
+```bash
+make migrate
 ```
 
 **Laravelのテストが失敗する場合**：
 ```bash
-docker compose exec laravel-api php artisan config:clear
-docker compose exec laravel-api php artisan cache:clear
+docker compose run --rm laravel-api php artisan config:clear
+docker compose run --rm laravel-api php artisan cache:clear
 ```
 
 **フロントエンドのテストが失敗する場合**：
 ```bash
-docker compose exec frontend npm test -- --clearCache
+docker compose run --rm frontend npm test -- --clearCache
 ```
