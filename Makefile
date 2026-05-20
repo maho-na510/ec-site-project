@@ -1,4 +1,4 @@
-.PHONY: help setup build start stop restart logs clean test migrate seed shell-rails shell-laravel shell-frontend db-reset report-inventory report-inventory-per-admin report-list scheduler-logs
+.PHONY: help setup build start stop restart logs clean test test-setup test-rails test-laravel test-frontend test-e2e coverage migrate seed db-reset shell-rails shell-laravel shell-frontend report-inventory report-inventory-per-admin report-list scheduler-logs install
 
 # Default target
 help:
@@ -17,12 +17,13 @@ help:
 	@echo "  make clean          - Stop containers and remove volumes"
 	@echo ""
 	@echo "Database:"
-	@echo "  make migrate        - Run database migrations"
+	@echo "  make migrate        - Run database migrations (dev + test schema sync)"
 	@echo "  make seed           - Seed database with sample data"
 	@echo "  make db-reset       - Reset database (drop, create, migrate, seed)"
 	@echo ""
 	@echo "Testing:"
-	@echo "  make test           - Run all tests (Rails, Laravel, React, E2E)"
+	@echo "  make test-setup     - Prepare test database (run once before first test)"
+	@echo "  make test           - Run all tests (Rails, Laravel, React)"
 	@echo "  make test-rails     - Run Rails tests only"
 	@echo "  make test-laravel   - Run Laravel tests only"
 	@echo "  make test-frontend  - Run React tests only"
@@ -35,10 +36,10 @@ help:
 	@echo "  make shell-frontend - Open bash shell in Frontend container"
 	@echo ""
 	@echo "Scheduler / Reports:"
-	@echo "  make report-inventory         - Generate all-products inventory CSV now"
+	@echo "  make report-inventory           - Generate all-products inventory CSV now"
 	@echo "  make report-inventory-per-admin - Generate per-admin inventory CSVs now"
-	@echo "  make report-list              - List all generated reports"
-	@echo "  make scheduler-logs           - Tail scheduler logs"
+	@echo "  make report-list                - List all generated reports"
+	@echo "  make scheduler-logs             - Tail scheduler logs"
 	@echo ""
 
 # Initial setup - run this once when first cloning the project
@@ -47,14 +48,14 @@ setup:
 	@[ -f .env ] || cp .env.example .env
 	@echo "Building Docker containers..."
 	docker compose build
-	@echo "Creating database..."
-	docker compose up -d mysql redis
-	@echo "Waiting for MySQL to be ready..."
-	@sleep 10
-	@echo "Running Rails migrations..."
+	@echo "Starting MySQL, Redis, Mailpit and waiting for health checks..."
+	docker compose up -d --wait mysql redis mailpit
+	@echo "Running Rails setup..."
 	docker compose run --rm rails-api bundle install
-	docker compose run --rm rails-api bundle exec rake db:create db:migrate
-	@echo "Running Laravel migrations..."
+	docker compose run --rm rails-api bundle exec rails db:create db:migrate
+	@echo "Setting up Rails test database..."
+	docker compose run --rm -e RAILS_ENV=test rails-api bundle exec rails db:create db:schema:load
+	@echo "Running Laravel setup..."
 	docker compose run --rm laravel-api composer install
 	docker compose run --rm laravel-api php artisan migrate
 	@echo "Installing frontend dependencies..."
@@ -72,9 +73,10 @@ start:
 	@echo "Starting all containers..."
 	docker compose up -d
 	@echo "Application started!"
-	@echo "  Frontend: http://localhost:5173"
-	@echo "  Rails API: http://localhost:3001/api/v1"
+	@echo "  Frontend:    http://localhost:5173"
+	@echo "  Rails API:   http://localhost:3001/api/v1"
 	@echo "  Laravel API: http://localhost:8000/api/v1/admin"
+	@echo "  Mailpit UI:  http://localhost:8025"
 
 # Stop all containers
 stop:
@@ -83,7 +85,6 @@ stop:
 
 # Restart all containers
 restart:
-	@echo "Restarting all containers..."
 	$(MAKE) stop
 	$(MAKE) start
 
@@ -99,12 +100,21 @@ clean:
 	docker system prune -f
 	@echo "Cleanup complete!"
 
+# Prepare test database (run once before first test, or after schema changes)
+# MySQL root で DB ごと作り直すことで外部キー制約の DROP 順序問題を回避する
+test-setup:
+	@echo "Setting up test database..."
+	docker compose up -d --wait mysql redis mailpit
+	docker compose exec -T mysql sh -c 'mysql -uroot -p"$$MYSQL_ROOT_PASSWORD" -e "DROP DATABASE IF EXISTS ec_site_test; CREATE DATABASE ec_site_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"'
+	docker compose run --rm -e RAILS_ENV=test rails-api bundle exec rails db:schema:load
+	@echo "Test database ready!"
+
 # Run all tests
 test:
 	@echo "Running all tests..."
 	@echo "================================"
 	@echo "Running Rails tests..."
-	docker compose run --rm rails-api bundle exec rails test
+	docker compose run --rm -e RAILS_ENV=test rails-api bundle exec rails test
 	@echo "================================"
 	@echo "Running Laravel tests..."
 	docker compose run --rm laravel-api php artisan test
@@ -116,58 +126,58 @@ test:
 
 # Run Rails tests only
 test-rails:
-	@echo "Running Rails tests..."
-	docker compose run --rm rails-api bundle exec rails test
+	docker compose run --rm -e RAILS_ENV=test rails-api bundle exec rails test
 
 # Run Laravel tests only
 test-laravel:
-	@echo "Running Laravel tests..."
 	docker compose run --rm laravel-api php artisan test
 
 # Run Frontend tests only
 test-frontend:
-	@echo "Running Frontend tests..."
 	docker compose run --rm frontend npm test -- --watchAll=false
 
 # Run E2E tests
 test-e2e:
 	@echo "Running E2E tests..."
-	docker compose up -d
-	@echo "Waiting for services to be ready..."
-	@sleep 5
+	docker compose up -d --wait
 	docker compose run --rm frontend npm run test:e2e
 
 # Generate test coverage reports
 coverage:
 	@echo "Generating test coverage reports..."
 	@echo "Rails coverage..."
-	docker compose run --rm rails-api bundle exec rails test
+	docker compose run --rm -e RAILS_ENV=test rails-api bundle exec rails test
 	@echo "Laravel coverage..."
 	docker compose run --rm laravel-api php artisan test --coverage
 	@echo "Frontend coverage..."
 	docker compose run --rm frontend npm test -- --coverage
 	@echo "Coverage reports generated!"
 
-# Run database migrations
+# Run database migrations (dev migration + test schema sync)
 migrate:
 	@echo "Running database migrations..."
-	docker compose run --rm rails-api bundle exec rake db:migrate
+	docker compose run --rm rails-api bundle exec rails db:migrate
+	@echo "Syncing test schema..."
+	docker compose exec -T mysql sh -c 'mysql -uroot -p"$$MYSQL_ROOT_PASSWORD" -e "DROP DATABASE IF EXISTS ec_site_test; CREATE DATABASE ec_site_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"'
+	docker compose run --rm -e RAILS_ENV=test rails-api bundle exec rails db:schema:load
 	docker compose run --rm laravel-api php artisan migrate
 	@echo "Migrations complete!"
 
 # Seed database
 seed:
 	@echo "Seeding database..."
-	docker compose run --rm rails-api bundle exec rake db:seed
+	docker compose run --rm rails-api bundle exec rails db:seed
 	docker compose run --rm laravel-api php artisan db:seed
 	@echo "Seeding complete!"
 
 # Reset database
 db-reset:
 	@echo "Resetting database..."
-	docker compose run --rm rails-api bundle exec rake db:drop db:create db:migrate db:seed
-	docker compose run --rm laravel-api php artisan migrate
-	docker compose run --rm laravel-api php artisan db:seed
+	docker compose run --rm rails-api bundle exec rails db:drop db:create db:migrate db:seed
+	@echo "Resetting test database..."
+	docker compose exec -T mysql sh -c 'mysql -uroot -p"$$MYSQL_ROOT_PASSWORD" -e "DROP DATABASE IF EXISTS ec_site_test; CREATE DATABASE ec_site_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"'
+	docker compose run --rm -e RAILS_ENV=test rails-api bundle exec rails db:schema:load
+	docker compose run --rm laravel-api php artisan migrate:fresh --seed
 	@echo "Database reset complete!"
 
 # Shell access

@@ -1,0 +1,32 @@
+<p><%= @user.name %> 様</p>
+
+<p>この度はご注文いただきありがとうございます。<br>
+以下の内容でご注文を承りました。</p>
+
+<p>注文番号: <strong><%= @order.order_number %></strong></p>
+<p>ご注文日時: <%= @order.created_at.strftime('%Y年%m月%d日 %H:%M') %></p>
+
+<h3>ご注文内容</h3>
+<table>
+  <thead>
+    <tr>
+      <th>商品名</th>
+      <th>数量</th>
+      <th>金額</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @order_items.each do |item| %>
+    <tr>
+      <td><%= item.product.name %></td>
+      <td><%= item.quantity %>個</td>
+      <td><%= number_to_currency(item.price_at_purchase * item.quantity, unit: '¥', delimiter: ',', format: '%u%n') %></td>
+    </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<p>合計金額: <strong><%= number_to_currency(@order.total_amount, unit: '¥', delimiter: ',', format: '%u%n') %></strong></p>
+
+<h3>お届け先</h3>
+<p><%= @order.shipping_address %></p>

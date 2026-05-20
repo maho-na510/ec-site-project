@@ -2,6 +2,7 @@ require 'test_helper'
 require 'minitest/mock'
 
 class OrderProcessingServiceTest < ActiveSupport::TestCase
+  include ActionMailer::TestHelper
   setup do
     @user = users(:one)
     @product_one = products(:one)  # stock_quantity: 50
@@ -21,9 +22,11 @@ class OrderProcessingServiceTest < ActiveSupport::TestCase
   # ---- 正常系 ----
 
   test "注文が正常に作成される" do
-    result = OrderProcessingService.new(@user, @params).execute
-    assert result[:success], result[:error]
-    assert_not_nil result[:order]
+    assert_enqueued_emails 1 do
+      result = OrderProcessingService.new(@user, @params).execute
+      assert result[:success], result[:error]
+      assert_not_nil result[:order]
+    end
   end
 
   test "注文後に在庫が減る" do
@@ -96,4 +99,5 @@ class OrderProcessingServiceTest < ActiveSupport::TestCase
     locked_ids = service.instance_variable_get(:@locked_products).keys
     assert_equal locked_ids.sort, locked_ids, "ロックがID昇順になっていない"
   end
+  
 end

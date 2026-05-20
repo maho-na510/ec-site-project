@@ -26,7 +26,7 @@ class OrderProcessingService
 
       process_payment(order)
 
-      # send_confirmation_email(order)
+      send_confirmation_email(order)
 
       {
         success: true,
@@ -136,7 +136,6 @@ class OrderProcessingService
   end
 
   def send_confirmation_email(order)
-    # OrderMailer.confirmation(order).deliver_later
-    Rails.logger.info "Order confirmation email sent for order #{order.order_number}"
+    OrderMailer.confirmation(order).deliver_later
   end
 end

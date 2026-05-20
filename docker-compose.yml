@@ -37,6 +37,16 @@ services:
       timeout: 3s
       retries: 5
 
+  # Mailpit - Local SMTP server for development email testing
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: ec-site-mailpit
+    ports:
+      - "1025:1025"   # SMTP
+      - "8025:8025"   # Web UI
+    networks:
+      - ec-site-network
+
   # Rails API (User-facing backend)
   rails-api:
     build:
@@ -64,6 +74,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      mailpit:
+        condition: service_started
     networks:
       - ec-site-network
     command: bash -c "rm -f tmp/pids/server.pid && bundle exec rails server -b 0.0.0.0"

@@ -9,7 +9,6 @@ module Api
 
         unless email.present?
           render json: {
-            success: false,
             error: 'Email is required'
           }, status: :bad_request
           return
@@ -26,7 +25,6 @@ module Api
         end
 
         render json: {
-          success: true,
           message: 'If an account exists with that email, password reset instructions have been sent'
         }, status: :ok
       end
@@ -39,7 +37,6 @@ module Api
 
         unless token.present? && new_password.present?
           render json: {
-            success: false,
             error: 'Token and password are required'
           }, status: :bad_request
           return
@@ -47,7 +44,6 @@ module Api
 
         unless new_password == password_confirmation
           render json: {
-            success: false,
             error: 'Passwords do not match'
           }, status: :unprocessable_entity
           return
@@ -57,7 +53,6 @@ module Api
 
         unless user
           render json: {
-            success: false,
             error: 'Invalid or expired token',
             message: 'Please request a new password reset'
           }, status: :unauthorized
@@ -69,12 +64,10 @@ module Api
           invalidate_reset_token(token)
 
           render json: {
-            success: true,
             message: 'Password reset successfully'
           }, status: :ok
         else
           render json: {
-            success: false,
             error: 'Password reset failed',
             errors: user.errors.messages
           }, status: :unprocessable_entity

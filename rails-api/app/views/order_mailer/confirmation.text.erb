@@ -1,0 +1,19 @@
+<%= @user.name %> 様
+
+この度はご注文いただきありがとうございます。
+以下の内容でご注文を承りました。
+
+注文番号: <%= @order.order_number %>
+ご注文日時: <%= @order.created_at.strftime('%Y年%m月%d日 %H:%M') %>
+
+■ ご注文内容
+<% @order_items.each do |item| %>
+・<%= item.product.name %> × <%= item.quantity %>個  <%= number_to_currency(item.price_at_purchase * item.quantity, unit: '¥', delimiter: ',', format: '%u%n') %>
+<% end %>
+
+合計金額: <%= number_to_currency(@order.total_amount, unit: '¥', delimiter: ',', format: '%u%n') %>
+
+■ お届け先
+<%= @order.shipping_address %>
+
+またのご利用をお待ちしております。
