@@ -7,6 +7,7 @@ use App\Models\Admin;
 use App\Models\InventoryLog;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Collection;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class InventoryService
 {
@@ -109,10 +110,18 @@ class InventoryService
     public function bulkAdjustStock(array $adjustments, Admin $admin): Collection
     {
         return DB::transaction(function () use ($adjustments, $admin) {
+            $productIds = array_column($adjustments, 'product_id');
+            $products = Product::findMany($productIds)->keyBy('id');
             $updatedProducts = collect();
 
-            foreach ($adjustments as $adjustment) {
-                $product = Product::findOrFail($adjustment['product_id']);
+        foreach ($adjustments as $adjustment) {
+            $product = $products->get($adjustment['product_id']);
+
+            if (!$product) {
+                throw new ModelNotFoundException(
+                    "Product [{$adjustment['product_id']}] not found."
+                );
+            }
 
                 $updatedProduct = $this->adjustStock(
                     $product,
