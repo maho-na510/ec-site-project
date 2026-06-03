@@ -46,26 +46,27 @@ class PasswordResetServiceTest < ActiveSupport::TestCase
   # =========================================================
 
   test "request_reset does not log the reset token" do
-    logged = []
-    # Railsのloggerをキャプチャ
-    Rails.logger.stub(:info, ->(msg) { logged << msg }) do
-      PasswordResetService.new(email: @existing_user.email).request_reset
-    end
+    log_output = StringIO.new
+    original_logger = Rails.logger
+    Rails.logger = Logger.new(log_output)
 
-    logged.each do |msg|
-      assert_no_match(/[A-Za-z0-9_\-]{20,}/, msg, "ログにトークンらしき文字列が含まれています")
-    end
+    PasswordResetService.new(email: @existing_user.email).request_reset
+
+    Rails.logger = original_logger
+
+    assert_no_match(/[A-Za-z0-9_\-]{20,}/, log_output.string, "ログにトークンらしき文字列が含まれています")
   end
 
   test "request_reset does not log user email address" do
-    logged = []
-    Rails.logger.stub(:info, ->(msg) { logged << msg }) do
-      PasswordResetService.new(email: @existing_user.email).request_reset
-    end
+    log_output = StringIO.new
+    original_logger = Rails.logger
+    Rails.logger = Logger.new(log_output)
 
-    logged.each do |msg|
-      assert_no_match(/@/, msg, "ログにメールアドレスが含まれています")
-    end
+    PasswordResetService.new(email: @existing_user.email).request_reset
+
+    Rails.logger = original_logger
+
+    assert_no_match(/@/, log_output.string, "ログにメールアドレスが含まれています")
   end
 
   # =========================================================
