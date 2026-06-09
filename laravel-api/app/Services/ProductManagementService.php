@@ -152,15 +152,10 @@ class ProductManagementService
             }
 
             // If stock quantity changed, log it
-            if (isset($data['stock_quantity']) && $data['stock_quantity'] !== $oldStockQuantity) {
-                $product->stock_quantity = $data['stock_quantity'];
-                $product->save();
-
-                $this->inventoryService->logInventoryChange(
+            if (isset($data['stock_quantity']) && (int)$data['stock_quantity'] !== $oldStockQuantity) {
+                $this->inventoryService->setStock(
                     $product,
-                    $oldStockQuantity,
-                    $data['stock_quantity'],
-                    'adjustment',
+                    (int)$data['stock_quantity'],
                     $admin,
                     $data['adjustment_note'] ?? 'Manual adjustment via product update'
                 );
