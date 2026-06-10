@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Services\InventoryService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
 
 class InventoryController extends Controller
 {
@@ -35,13 +36,15 @@ class InventoryController extends Controller
         try {
             $admin = auth('api')->user();
 
-            $updatedProduct = $this->inventoryService->adjustStock(
-                $product,
-                $validated['quantity'],
-                $validated['action_type'],
-                $admin,
-                $validated['notes'] ?? null
-            );
+            $updatedProduct = DB::transaction(function () use ($product, $validated, $admin) {
+                return $this->inventoryService->adjustStock(
+                    $product,
+                    $validated['quantity'],
+                    $validated['action_type'],
+                    $admin,
+                    $validated['notes'] ?? null
+                );
+            });
 
             return response()->json([
                 'success' => true,
@@ -101,20 +104,15 @@ class InventoryController extends Controller
                 'message' => $e->getMessage(),
             ], 422);
         } catch (\Exception $e) {
+            Log::error('Failed to set stock: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to set stock',
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred.',
             ], 500);
         }
     }
 
-    /**
-     * Bulk adjust stock for multiple products.
-     *
-     * @param Request $request
-     * @return JsonResponse
-     */
     public function bulkAdjust(Request $request): JsonResponse
     {
         $validated = $request->validate([
