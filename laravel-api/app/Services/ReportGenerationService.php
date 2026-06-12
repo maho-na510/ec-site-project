@@ -21,7 +21,9 @@ class ReportGenerationService
             $products = Product::with('category')
                 ->orderBy('category_id')
                 ->orderBy('name')
-                ->get();
+                ->cursor();
+
+            $rowCount = Product::count();
 
             // Generate CSV content
             $csvContent = $this->generateInventoryCsv($products);
@@ -29,7 +31,7 @@ class ReportGenerationService
             // Save to storage
             Storage::put($filepath, $csvContent);
 
-            $rowCount = $products->count();
+            $rowCount = Product::count();
 
             Log::info('Inventory report generated successfully', [
                 'filename' => $filename,
@@ -127,8 +129,9 @@ class ReportGenerationService
                     ->where('created_by_admin_id', $admin->id)
                     ->orderBy('category_id')
                     ->orderBy('name')
-                    ->get();
+                    ->cursor();
 
+                $rowCount = Product::where('created_by_admin_id', $admin->id)->count();
                 // ファイル名に使えない文字を除去
                 $safeName = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $admin->name);
                 $filename = "inventory_report_admin_{$admin->id}_{$safeName}_{$date}.csv";
@@ -141,7 +144,7 @@ class ReportGenerationService
                     'admin_id'   => $admin->id,
                     'admin_name' => $admin->name,
                     'filename'   => $filename,
-                    'row_count'  => $products->count(),
+                    'row_count'  => $rowCount,
                     'file_size'  => strlen($csvContent),
                 ];
 
@@ -149,7 +152,7 @@ class ReportGenerationService
                     'admin_id'   => $admin->id,
                     'admin_name' => $admin->name,
                     'filename'   => $filename,
-                    'row_count'  => $products->count(),
+                    'row_count'  => $rowCount,
                 ]);
             } catch (\Exception $e) {
                 Log::error('Failed to generate per-admin inventory report', [
