@@ -35,7 +35,7 @@ class ImageUploadService
         $now = now();
         foreach ($validFiles as $displayOrder => $file) {
             $filename = $this->generateFilename($file);
-            $path = $file->storeAs('products/' . $product->id, $filename, 'public');
+            $path = $file->storeAs('products/' . $product->id, $filename, $this->getDisk());
 
             $records[] = [
                 'product_id'    => $product->id,
@@ -74,13 +74,13 @@ class ImageUploadService
         $path = $file->storeAs(
             'products/' . $product->id,
             $filename,
-            'public'
+            $this->getDisk()
         );
 
         // Create product image record
         return ProductImage::create([
-            'product_id' => $product->id,
-            'image_url' => $path,
+            'product_id'    => $product->id,
+            'image_url'     => $path,
             'display_order' => $displayOrder,
         ]);
     }
@@ -94,8 +94,9 @@ class ImageUploadService
     public function deleteImage(ProductImage $image): bool
     {
         // Delete file from storage
-        if (Storage::disk('public')->exists($image->image_url)) {
-            Storage::disk('public')->delete($image->image_url);
+        $disk = $this->getDisk();
+        if (Storage::disk($disk)->exists($image->image_url)) {
+            Storage::disk($disk)->delete($image->image_url);
         }
 
         // Delete database record
@@ -169,6 +170,16 @@ class ImageUploadService
         $random = Str::random(8);
 
         return "{$timestamp}_{$random}.{$extension}";
+    }
+
+    /**
+     * Get storage disk name from config.
+     *
+     * @return string
+     */
+    private function getDisk(): string
+    {
+        return config('filesystems.product_images', 'public');
     }
 
     /**
