@@ -46,6 +46,12 @@ jobs:
         run: |
           docker compose up -d mysql redis
           sleep 15
+      
+      - name: Install Rails dependencies
+        run: docker compose run --rm rails-api bundle install
+
+      - name: Install Laravel dependencies
+        run: docker compose run --rm laravel-api composer install
 
       - name: Run Rails migrations
         run: docker compose run --rm rails-api bundle exec rake db:create db:migrate
