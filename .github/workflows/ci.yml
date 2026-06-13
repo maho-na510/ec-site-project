@@ -6,31 +6,32 @@ on:
   pull_request:
     branches: [main, develop]
 
-jobs:
-  test:
-    runs-on: ubuntu-latest
+env:
+  DATABASE_HOST: mysql
+  DATABASE_PORT: 3306
+  DATABASE_NAME: ec_site_development
+  DATABASE_USER: ec_user
+  DATABASE_PASSWORD: ec_password
+  MYSQL_ROOT_PASSWORD: root_password
+  REDIS_HOST: redis
+  REDIS_PORT: 6379
+  JWT_SECRET: test-jwt-secret-key-for-ci-minimum-32-characters
+  RAILS_ENV: test
+  APP_ENV: testing
+  APP_KEY: base64:dGVzdC1hcHAta2V5LWZvci1jaS10ZXN0aW5n
+  APP_DEBUG: false
+  FRONTEND_URL: http://localhost:5173
+  VITE_USER_API_URL: http://localhost:3001/api/v1
+  VITE_ADMIN_API_URL: http://localhost:8000/api/v1/admin
+  SESSION_DRIVER: redis
+  CACHE_DRIVER: redis
+  FILESYSTEM_DISK: local
+  MAIL_MAILER: log
 
-    env:
-      DATABASE_HOST: mysql
-      DATABASE_PORT: 3306
-      DATABASE_NAME: ec_site_development
-      DATABASE_USER: ec_user
-      DATABASE_PASSWORD: ec_password
-      MYSQL_ROOT_PASSWORD: root_password
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      JWT_SECRET: test-jwt-secret-key-for-ci-minimum-32-characters
-      RAILS_ENV: test
-      APP_ENV: testing
-      APP_KEY: base64:dGVzdC1hcHAta2V5LWZvci1jaS10ZXN0aW5n
-      APP_DEBUG: false
-      FRONTEND_URL: http://localhost:5173
-      VITE_USER_API_URL: http://localhost:3001/api/v1
-      VITE_ADMIN_API_URL: http://localhost:8000/api/v1/admin
-      SESSION_DRIVER: redis
-      CACHE_DRIVER: redis
-      FILESYSTEM_DISK: local
-      MAIL_MAILER: log
+jobs:
+  test-rails:
+    name: Rails Tests
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
@@ -46,24 +47,63 @@ jobs:
         run: |
           docker compose up -d mysql redis
           sleep 15
-      
+
       - name: Install Rails dependencies
         run: docker compose run --rm rails-api bundle install
-
-      - name: Install Laravel dependencies
-        run: docker compose run --rm laravel-api composer install
 
       - name: Run Rails migrations
         run: docker compose run --rm rails-api bundle exec rake db:create db:migrate
 
-      - name: Run Laravel migrations
-        run: docker compose run --rm laravel-api php artisan migrate --force
-
       - name: Run Rails tests
         run: docker compose run --rm rails-api bundle exec rails test
 
+      - name: Stop containers
+        if: always()
+        run: docker compose down
+
+  test-laravel:
+    name: Laravel Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Copy .env
+        run: cp .env.example .env
+
+      - name: Build containers
+        run: docker compose build
+
+      - name: Start MySQL and Redis
+        run: |
+          docker compose up -d mysql redis
+          sleep 15
+
+      - name: Install Laravel dependencies
+        run: docker compose run --rm laravel-api composer install
+
+      - name: Run Laravel migrations
+        run: docker compose run --rm laravel-api php artisan migrate --force
+
       - name: Run Laravel tests
         run: docker compose run --rm laravel-api php artisan test
+
+      - name: Stop containers
+        if: always()
+        run: docker compose down
+
+  test-frontend:
+    name: Frontend Tests
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build containers
+        run: docker compose build
 
       - name: Run Frontend tests
         run: docker compose run --rm frontend npm test -- --watchAll=false
