@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Copy .env
+        run: cp .env.example .env
+
+      - name: Build containers
+        run: docker compose build
+
+      - name: Start MySQL and Redis
+        run: |
+          docker compose up -d mysql redis
+          sleep 15
+
+      - name: Run Rails migrations
+        run: |
+          docker compose run --rm rails-api bundle exec rake db:create db:migrate
+
+      - name: Run Laravel migrations
+        run: |
+          docker compose run --rm laravel-api php artisan migrate --force
+
+      - name: Run Rails tests
+        run: docker compose run --rm rails-api bundle exec rails test
+
+      - name: Run Laravel tests
+        run: docker compose run --rm laravel-api php artisan test
+
+      - name: Run Frontend tests
+        run: docker compose run --rm frontend npm test -- --watchAll=false
+
+      - name: Stop containers
+        if: always()
+        run: docker compose down
