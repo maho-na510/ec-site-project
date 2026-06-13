@@ -65,7 +65,7 @@ class UserTest < ActiveSupport::TestCase
       address: "123 Main St"
     )
     assert_not user.valid?
-    assert_includes user.errors[:password], "is too short (minimum is 6 characters)"
+    assert_includes user.errors[:password], "is too short (minimum is 8 characters)"
   end
 
   test "should authenticate with correct password" do
