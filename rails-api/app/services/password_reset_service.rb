@@ -22,12 +22,11 @@ class PasswordResetService
     # Send password reset email
     # In production: Use background job
     # PasswordResetMailer.reset_instructions(user, reset_token).deliver_later
-    Rails.logger.info "Password reset token generated for user #{user.email}: #{reset_token.token}"
+    Rails.logger.info "Password reset requested for user_id=#{user.id}" 
 
     {
       success: true,
-      message: 'Password reset instructions sent to your email',
-      token: reset_token.token # Remove this in production (only send via email)
+      message: 'If the email exists, a password reset link has been sent',
     }
   end
 
