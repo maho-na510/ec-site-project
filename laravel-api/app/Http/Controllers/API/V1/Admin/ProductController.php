@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Services\ProductManagementService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log; 
 
 class ProductController extends Controller
 {
@@ -51,10 +52,11 @@ class ProductController extends Controller
                 ],
             ], 200);
         } catch (\Exception $e) {
+            Log::error('Failed to fetch products: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to fetch products',
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred.',
             ], 500);
         }
     }
@@ -88,10 +90,11 @@ class ProductController extends Controller
                 'data' => $product,
             ], 201);
         } catch (\Exception $e) {
+            Log::error('Failed to create product: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to create product',
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred.',
             ], 500);
         }
     }
@@ -114,10 +117,11 @@ class ProductController extends Controller
                 'data' => $product,
             ], 200);
         } catch (\Exception $e) {
+            Log::error('Failed to fetch products: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to fetch product',
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred.',
             ], 500);
         }
     }
@@ -154,10 +158,11 @@ class ProductController extends Controller
                 'data' => $product,
             ], 200);
         } catch (\Exception $e) {
+            Log::error('Failed to update product: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to update product',
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred.',
             ], 500);
         }
     }
@@ -178,10 +183,11 @@ class ProductController extends Controller
                 'message' => 'Product deleted successfully',
             ], 200);
         } catch (\Exception $e) {
+            Log::error('Failed to delete product: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to delete product',
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred.',
             ], 500);
         }
     }
@@ -203,10 +209,11 @@ class ProductController extends Controller
                 'data' => $product,
             ], 200);
         } catch (\Exception $e) {
+            Log::error('Failed to toggle suspension: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to toggle suspension',
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred.',
             ], 500);
         }
     }
@@ -228,10 +235,11 @@ class ProductController extends Controller
                 'data' => $products,
             ], 200);
         } catch (\Exception $e) {
+            Log::error('Failed to fetch low stock products: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to fetch low stock products',
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred.',
             ], 500);
         }
     }

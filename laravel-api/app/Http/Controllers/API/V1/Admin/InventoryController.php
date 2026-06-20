@@ -7,6 +7,8 @@ use App\Models\Product;
 use App\Services\InventoryService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class InventoryController extends Controller
 {
@@ -17,13 +19,6 @@ class InventoryController extends Controller
         $this->inventoryService = $inventoryService;
     }
 
-    /**
-     * Adjust stock for a product.
-     *
-     * @param Request $request
-     * @param Product $product
-     * @return JsonResponse
-     */
     public function adjustStock(Request $request, Product $product): JsonResponse
     {
         $validated = $request->validate([
@@ -35,13 +30,15 @@ class InventoryController extends Controller
         try {
             $admin = auth('api')->user();
 
-            $updatedProduct = $this->inventoryService->adjustStock(
-                $product,
-                $validated['quantity'],
-                $validated['action_type'],
-                $admin,
-                $validated['notes'] ?? null
-            );
+            $updatedProduct = DB::transaction(function () use ($product, $validated, $admin) {
+                return $this->inventoryService->adjustStock(
+                    $product,
+                    $validated['quantity'],
+                    $validated['action_type'],
+                    $admin,
+                    $validated['notes'] ?? null
+                );
+            });
 
             return response()->json([
                 'success' => true,
@@ -56,21 +53,15 @@ class InventoryController extends Controller
                 'message' => $e->getMessage(),
             ], 422);
         } catch (\Exception $e) {
+            Log::error('Failed to adjust stock: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to adjust stock',
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred.',
             ], 500);
         }
     }
 
-    /**
-     * Set stock to a specific quantity.
-     *
-     * @param Request $request
-     * @param Product $product
-     * @return JsonResponse
-     */
     public function setStock(Request $request, Product $product): JsonResponse
     {
         $validated = $request->validate([
@@ -81,12 +72,14 @@ class InventoryController extends Controller
         try {
             $admin = auth('api')->user();
 
-            $updatedProduct = $this->inventoryService->setStock(
-                $product,
-                $validated['quantity'],
-                $admin,
-                $validated['notes'] ?? null
-            );
+            $updatedProduct = DB::transaction(function () use ($product, $validated, $admin) {
+                return $this->inventoryService->setStock(
+                    $product,
+                    $validated['quantity'],
+                    $admin,
+                    $validated['notes'] ?? null
+                );
+            });
 
             return response()->json([
                 'success' => true,
@@ -101,20 +94,15 @@ class InventoryController extends Controller
                 'message' => $e->getMessage(),
             ], 422);
         } catch (\Exception $e) {
+            Log::error('Failed to set stock: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to set stock',
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred.',
             ], 500);
         }
     }
 
-    /**
-     * Bulk adjust stock for multiple products.
-     *
-     * @param Request $request
-     * @return JsonResponse
-     */
     public function bulkAdjust(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -139,21 +127,15 @@ class InventoryController extends Controller
                 'data' => $updatedProducts,
             ], 200);
         } catch (\Exception $e) {
+            Log::error('Failed to adjust stock: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to adjust stock',
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred.',
             ], 500);
         }
     }
 
-    /**
-     * Get inventory history for a product.
-     *
-     * @param Request $request
-     * @param Product $product
-     * @return JsonResponse
-     */
     public function history(Request $request, Product $product): JsonResponse
     {
         try {
@@ -165,10 +147,11 @@ class InventoryController extends Controller
                 'data' => $history,
             ], 200);
         } catch (\Exception $e) {
+            Log::error('Failed to fetch inventory history: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to fetch inventory history',
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred.',
             ], 500);
         }
     }
@@ -183,14 +166,10 @@ class InventoryController extends Controller
      *
      * ルートの注意：/api/v1/admin/inventory/logs（ハイフンでなくスラッシュ！）
      * inventory-logs と書きたくなるけど実際は inventory/{product} のパスと混在している
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function logs(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            // 日付は省略可能にした（省略時は過去30日間を対象にする）
             'start_date' => 'nullable|date',
             'end_date'   => 'nullable|date|after_or_equal:start_date',
             'product_id' => 'nullable|exists:products,id',
@@ -219,19 +198,15 @@ class InventoryController extends Controller
                 'data' => $logs,
             ], 200);
         } catch (\Exception $e) {
+            Log::error('Failed to fetch inventory logs: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to fetch inventory logs',
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred.',
             ], 500);
         }
     }
 
-    /**
-     * Get inventory statistics.
-     *
-     * @return JsonResponse
-     */
     public function statistics(): JsonResponse
     {
         try {
@@ -242,20 +217,15 @@ class InventoryController extends Controller
                 'data' => $stats,
             ], 200);
         } catch (\Exception $e) {
+            Log::error('Failed to fetch statistics: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to fetch statistics',
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred.',
             ], 500);
         }
     }
 
-    /**
-     * Get products needing restock.
-     *
-     * @param Request $request
-     * @return JsonResponse
-     */
     public function needsRestock(Request $request): JsonResponse
     {
         try {
@@ -267,10 +237,11 @@ class InventoryController extends Controller
                 'data' => $products,
             ], 200);
         } catch (\Exception $e) {
+            Log::error('Failed to fetch products needing restock: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to fetch products needing restock',
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred.',
             ], 500);
         }
     }
