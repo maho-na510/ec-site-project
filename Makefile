@@ -44,7 +44,8 @@ help:
 # Initial setup - run this once when first cloning the project
 setup:
 	@echo "Setting up EC Site project..."
-	@[ -f .env ] || cp .env.example .env
+	@cp .env.example .env
+	docker compose down -v
 	@echo "Building Docker containers..."
 	docker compose build
 	@echo "Creating database..."
@@ -53,12 +54,12 @@ setup:
 	@sleep 10
 	@echo "Running Rails migrations..."
 	docker compose run --rm rails-api bundle install
-	docker compose run --rm rails-api bundle exec rake db:create db:migrate
+	-docker compose run --rm rails-api bundle exec rake db:create
+	docker compose run --rm rails-api bundle exec rake db:migrate
 	@echo "Running Laravel migrations..."
 	docker compose run --rm laravel-api composer install
 	docker compose run --rm laravel-api php artisan migrate
 	@echo "Installing frontend dependencies..."
-	docker compose run --rm frontend npm install
 	@echo "Seeding database..."
 	$(MAKE) seed
 	@echo "Setup complete! Run 'make start' to start the application."
