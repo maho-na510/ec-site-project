@@ -21,14 +21,18 @@ class OrderProcessingServiceTest < ActiveSupport::TestCase
   # ---- 正常系 ----
 
   test "注文が正常に作成される" do
-    result = OrderProcessingService.new(@user, @params).execute
-    assert result[:success], result[:error]
-    assert_not_nil result[:order]
+    PaymentService.stub(:process_payment, { success: true, transaction_id: 'TEST-TXN-1', message: 'Payment processed successfully' }) do
+      result = OrderProcessingService.new(@user, @params).execute
+      assert result[:success], result[:error]
+      assert_not_nil result[:order]
+    end
   end
 
   test "注文後に在庫が減る" do
     stock_before = @product_one.stock_quantity
-    OrderProcessingService.new(@user, @params).execute
+    PaymentService.stub(:process_payment, { success: true, transaction_id: 'TEST-TXN-2', message: 'Payment processed successfully' }) do
+      OrderProcessingService.new(@user, @params).execute
+    end
     assert_equal stock_before - 2, @product_one.reload.stock_quantity
   end
 
