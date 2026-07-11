@@ -31,7 +31,7 @@ class AuthController extends Controller
         ]);
 
         try {
-            $result = $this->authService->login($credentials);
+            $result = $this->authService->login($credentials, $request->ip(), $request->userAgent());
 
             // JWTをHttpOnly Cookieにセット（XSS対策）
             $ttlMinutes = config('jwt.ttl', 60);
@@ -104,10 +104,10 @@ class AuthController extends Controller
      *
      * @return JsonResponse
      */
-    public function refresh(): JsonResponse
+    public function refresh(Request $request): JsonResponse
     {
         try {
-            $result = $this->authService->refresh();
+            $result = $this->authService->refresh($request->ip(), $request->userAgent());
 
             return response()->json([
                 'success' => true,

@@ -92,4 +92,55 @@ class AuthControllerTest extends TestCase
                 'data' => ['email' => $admin->email],
             ]);
     }
+
+    public function test_login_stores_ip_address_and_user_agent_in_session(): void
+    {
+        $admin = Admin::factory()->create([
+            'email' => 'admin@test.com',
+            'password' => Hash::make('password123'),
+        ]);
+
+        $response = $this->withHeaders([
+            'User-Agent' => 'TestBrowser/1.0',
+        ])->postJson('/api/v1/admin/auth/login', [
+            'email' => 'admin@test.com',
+            'password' => 'password123',
+        ]);
+
+        $response->assertStatus(200);
+
+        // CookieからJWTトークンを取得してキーを構築
+        $cookies = $response->headers->getCookies();
+        $tokenCookie = collect($cookies)->first(fn($c) => $c->getName() === 'admin_token');
+        $token = $tokenCookie->getValue();
+
+        // サービスと同じキー生成ロジックで直接取得
+        $sessionKey = "session:admin:{$admin->id}:" . md5($token);
+        $sessionData = json_decode(\Illuminate\Support\Facades\Redis::get($sessionKey), true);
+
+        $this->assertNotNull($sessionData);
+        $this->assertArrayHasKey('ip_address', $sessionData);
+        $this->assertArrayHasKey('user_agent', $sessionData);
+        $this->assertEquals('TestBrowser/1.0', $sessionData['user_agent']);
+    }
+
+    public function test_refresh_stores_updated_ip_and_user_agent_in_session(): void
+    {
+        $admin = Admin::factory()->create();
+        $token = JWTAuth::fromUser($admin);
+
+        $response = $this->withHeaders([
+            'Authorization' => "Bearer {$token}",
+            'User-Agent' => 'RefreshBrowser/2.0',
+        ])->postJson('/api/v1/admin/auth/refresh');
+
+        $response->assertStatus(200);
+
+        $newToken = $response->json('data.token');
+        $sessionKey = "session:admin:{$admin->id}:" . md5($newToken);
+        $sessionData = json_decode(\Illuminate\Support\Facades\Redis::get($sessionKey), true);
+
+        $this->assertNotNull($sessionData);
+        $this->assertEquals('RefreshBrowser/2.0', $sessionData['user_agent']);
+    }
 }
