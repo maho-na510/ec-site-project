@@ -71,9 +71,12 @@ class PasswordResetService
 
   # Invalidate all existing sessions for user
   def invalidate_all_sessions(user)
-    # Remove all session keys for this user from Redis
     pattern = "session:user:#{user.id}:*"
-    keys = Redis.current.keys(pattern)
-    Redis.current.del(*keys) if keys.any?
+    cursor = "0"
+    loop do
+      cursor, keys = $redis.scan(cursor, match: pattern, count: 100)
+      $redis.del(*keys) if keys.any?
+      break if cursor == "0"
+    end
   end
 end
