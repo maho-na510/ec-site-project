@@ -103,4 +103,22 @@ class Api::V1::OrdersControllerTest < ActionDispatch::IntegrationTest
     assert_response :unprocessable_entity
     assert_not json_response['success']
   end
+
+  test "should return 500 when unexpected error occurs during cancel" do
+  pending_order = @user.orders.create!(
+    order_number: 'TEST-003',
+    total_amount: 100,
+    status: 'pending',
+    shipping_address: '123 Test St'
+  )
+
+  # cancel! が予期しないDBエラーを起こすことをシミュレート
+  Order.stub_any_instance(:cancel!, -> { raise ActiveRecord::StatementInvalid, "DB error" }) do
+    post cancel_api_v1_order_url(pending_order),
+      headers: auth_headers(@user),
+      as: :json
+  end
+
+  assert_response :internal_server_error
+end
 end
