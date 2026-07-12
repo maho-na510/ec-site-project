@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API\V1\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StoreAdminRequest;
 use App\Models\Admin;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -28,7 +29,7 @@ class AdminController extends Controller
     /**
      * 管理者アカウントを新規作成する
      */
-    public function store(Request $request): JsonResponse
+    public function store(StoreAdminRequest $request): JsonResponse
     {
         $validated = $request->validate([
             'name'                  => 'required|string|max:255',
