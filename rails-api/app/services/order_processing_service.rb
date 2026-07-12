@@ -1,8 +1,9 @@
 class OrderProcessingService
-  def initialize(user, params)
+  def initialize(user, params, payment_job: PaymentProcessingJob)
     @user = user
     @params = params
     @cart = user.active_cart
+    @payment_job = payment_job
   end
 
   def execute
@@ -12,6 +13,11 @@ class OrderProcessingService
 
     unless @params[:shipping_address].present?
       return { success: false, error: 'Shipping address is required' }
+    end
+    
+    payment_method = @params[:payment_method] || 'credit_card'
+    unless %w[credit_card debit_card paypal bank_transfer].include?(payment_method)
+      return { success: false, error: 'Invalid payment method' }
     end
 
     begin
@@ -24,7 +30,7 @@ class OrderProcessingService
         @cart.checkout!
       end
 
-      process_payment(order)
+      @payment_job.perform_later(order.id, payment_method)
 
       # send_confirmation_email(order)
 
@@ -106,33 +112,6 @@ class OrderProcessingService
 
       Rails.logger.info "Deducted #{item.quantity} units of product #{product.id} (#{product.name})"
     end
-  end
-
-  def process_payment(order)
-    payment_method = @params[:payment_method] || 'credit_card'
-
-    unless %w[credit_card debit_card paypal bank_transfer].include?(payment_method)
-      raise ArgumentError, 'Invalid payment method'
-    end
-
-    payment = Payment.new(
-      order: order,
-      payment_method: payment_method,
-      amount: order.total_amount,
-      status: 'pending'
-    )
-
-    payment_result = PaymentService.process_payment(payment)
-
-    if payment_result[:success]
-      payment.mark_completed!
-      order.mark_processing!
-    else
-      payment.mark_failed!
-      raise StandardError, 'Payment processing failed'
-    end
-
-    payment
   end
 
   def send_confirmation_email(order)
