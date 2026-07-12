@@ -46,13 +46,7 @@ class PasswordResetToken < ApplicationRecord
   private
 
   def generate_token
-    # Generate a secure random token
-    self.token = SecureRandom.urlsafe_base64(32)
-
-    # Ensure uniqueness
-    while PasswordResetToken.exists?(token: token)
-      self.token = SecureRandom.urlsafe_base64(32)
-    end
+    self.token = SecureRandom.uuid
   end
 
   def set_expiry
