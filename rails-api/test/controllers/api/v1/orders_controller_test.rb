@@ -1,4 +1,5 @@
 require "test_helper"
+require "minitest/mock"
 
 class Api::V1::OrdersControllerTest < ActionDispatch::IntegrationTest
   setup do
@@ -29,14 +30,16 @@ class Api::V1::OrdersControllerTest < ActionDispatch::IntegrationTest
     cart = @user.carts.create!
     cart.cart_items.create!(product: @product, quantity: 1)
 
-    assert_difference('Order.count', 1) do
-      post api_v1_orders_url,
-        headers: auth_headers(@user),
-        params: {
-          shipping_address: '123 Test St, Test City, TS 12345',
-          payment_method: 'credit_card'
-        },
-        as: :json
+    PaymentService.stub(:process_payment, { success: true, transaction_id: 'TEST-TXN-3', message: 'Payment processed successfully' }) do
+      assert_difference('Order.count', 1) do
+        post api_v1_orders_url,
+          headers: auth_headers(@user),
+          params: {
+            shipping_address: '123 Test St, Test City, TS 12345',
+            payment_method: 'credit_card'
+          },
+          as: :json
+      end
     end
 
     assert_response :created
