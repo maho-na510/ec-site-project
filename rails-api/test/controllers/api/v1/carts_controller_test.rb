@@ -44,7 +44,7 @@ class Api::V1::CartsControllerTest < ActionDispatch::IntegrationTest
       params: { product_id: @product.id, quantity: 99999 },
       as: :json
 
-    assert_response :unprocessable_entity
+    assert_response :unprocessable_content
     assert_not json_response['success']
   end
 
@@ -87,5 +87,36 @@ class Api::V1::CartsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert json_response['success']
+  end
+
+  # usecase層の追加で対応
+  test "should return 404 when product not found on add" do
+    # Usecase が find_by で nil を返し、http_status: :not_found を返す
+    post items_api_v1_cart_url,
+      headers: auth_headers(@user),
+      params: { product_id: 0, quantity: 1 },  # 存在しないID
+      as: :json
+
+    assert_response :not_found
+    assert_not json_response['success']
+  end
+
+  test "should return 404 when cart item not found on update" do
+    result = put api_v1_cart_url + "/items/0",  # 存在しないカートアイテムID
+      headers: auth_headers(@user),
+      params: { quantity: 3 },
+      as: :json
+
+    assert_response :not_found
+    assert_not json_response['success']
+  end
+
+  test "should return 404 when cart item not found on remove" do
+    delete api_v1_cart_url + "/items/0",  # 存在しないカートアイテムID
+      headers: auth_headers(@user),
+    as: :json
+
+    assert_response :not_found
+    assert_not json_response['success']
   end
 end

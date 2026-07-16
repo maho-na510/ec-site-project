@@ -5,118 +5,37 @@ module Api
 
       # GET /api/v1/cart
       def show
-        render json: {
-          success: true,
-          data: cart_json(@cart)
-        }, status: :ok
+        render json: { success: true, data: cart_json(@cart) }, status: :ok
       end
 
       # POST /api/v1/cart/items
-      def add_item
-        product = Product.active.find(params[:product_id])
-
-        unless product.sufficient_stock?(params[:quantity].to_i)
-          render json: {
-            success: false,
-            error: 'Insufficient stock',
-            message: "在庫が不足しています（残り#{product.stock_quantity}個）"
-          }, status: :unprocessable_entity
-          return
-        end
-
-        result = CartService.new(@cart).add_item(
-          product_id: product.id,
+       def add_item
+        result = CartUsecase.new(@cart).add_item(
+          product_id: params[:product_id],
           quantity: params[:quantity].to_i
         )
-
-        if result[:success]
-          render json: {
-            success: true,
-            data: cart_json(@cart.reload),
-            message: 'カートに追加しました'
-          }, status: :ok
-        else
-          render json: {
-            success: false,
-            error: 'Failed to add item',
-            message: result[:error]
-          }, status: :unprocessable_entity
-        end
+        render_result(result, 'カートに追加しました')
       end
 
       # PUT /api/v1/cart/items/:id
       def update_item
-        cart_item = @cart.cart_items.find(params[:id])
-        product = cart_item.product
-        new_quantity = params[:quantity].to_i
-
-        unless product.sufficient_stock?(new_quantity)
-          render json: {
-            success: false,
-            error: 'Insufficient stock',
-            message: "在庫が不足しています（残り#{product.stock_quantity}個）"
-          }, status: :unprocessable_entity
-          return
-        end
-
-        result = CartService.new(@cart).update_item(
-          cart_item_id: cart_item.id,
-          quantity: new_quantity
+        result = CartUsecase.new(@cart).update_item(
+          cart_item_id: params[:id],
+          quantity: params[:quantity].to_i
         )
-
-        if result[:success]
-          render json: {
-            success: true,
-            data: cart_json(@cart.reload),
-            message: 'カートを更新しました'
-          }, status: :ok
-        else
-          render json: {
-            success: false,
-            error: 'Failed to update item',
-            message: result[:error]
-          }, status: :unprocessable_entity
-        end
+        render_result(result, 'カートを更新しました')
       end
 
       # DELETE /api/v1/cart/items/:id
       def remove_item
-        cart_item = @cart.cart_items.find(params[:id])
-
-        result = CartService.new(@cart).remove_item(cart_item.id)
-
-        if result[:success]
-          render json: {
-            success: true,
-            data: cart_json(@cart.reload),
-            message: '商品を削除しました'
-          }, status: :ok
-        else
-          render json: {
-            success: false,
-            error: 'Failed to remove item',
-            message: result[:error]
-          }, status: :unprocessable_entity
-        end
+        result = CartUsecase.new(@cart).remove_item(cart_item_id: params[:id])
+        render_result(result, '商品を削除しました')
       end
 
       # DELETE /api/v1/cart
       def clear
-        result = CartService.new(@cart).clear
-
-        if result[:success]
-          render json: {
-            success: true,
-            data: cart_json(@cart.reload),
-            message: 'カートをクリアしました'
-          }, status: :ok
-        else
-          render json: {
-            success: false,
-            error: 'Failed to clear cart',
-            message: result[:error]
-          }, status: :unprocessable_entity
-        end
+        result = CartUsecase.new(@cart).clear
+        render_result(result, 'カートをクリアしました')
       end
 
       private
@@ -124,6 +43,22 @@ module Api
       def set_cart
         @cart = current_user.carts.active.first_or_create
       end
+
+      def render_result(result, success_message)
+        if result[:success]
+          render json: {
+            success: true,
+            data: cart_json(@cart.reload),
+            message: success_message
+          }, status: :ok
+        else
+          render json: {
+            success: false,
+            error: result[:error]
+          }, status: result[:http_status] || :unprocessable_content
+        end
+      end
+
 
       def cart_json(cart)
         {
