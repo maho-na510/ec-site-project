@@ -28,6 +28,8 @@ class InventoryService
         ?string $notes = null
     ): Product {
         return DB::transaction(function () use ($product, $quantity, $actionType, $admin, $notes) {
+
+            $product = Product::lockForUpdate()->findOrFail($product->id);
             $oldQuantity = $product->stock_quantity;
 
             // 返品は仕入れ返品（在庫を減らす）として扱う。
@@ -76,6 +78,8 @@ class InventoryService
         ?string $notes = null
     ): Product {
         return DB::transaction(function () use ($product, $quantity, $admin, $notes) {
+
+            $product = Product::lockForUpdate()->findOrFail($product->id);
             $oldQuantity = $product->stock_quantity;
 
             if ($quantity < 0) {
@@ -112,7 +116,8 @@ class InventoryService
             $updatedProducts = collect();
 
             foreach ($adjustments as $adjustment) {
-                $product = Product::findOrFail($adjustment['product_id']);
+
+                $product = Product::lockForUpdate()->findOrFail($adjustment['product_id']);
 
                 $updatedProduct = $this->adjustStock(
                     $product,
