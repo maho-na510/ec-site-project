@@ -38,8 +38,9 @@ class ProductController extends Controller
             ]);
 
             $perPage = $request->input('per_page', 20);
-            $products = $this->productService->getProducts($filters, $perPage);
-
+            $page    = $request->input('page', 1);
+            $products = $this->productService->getProducts($filters, $perPage, $page);
+            
             return response()->json([
                 'success' => true,
                 'data' => $products->items(),
