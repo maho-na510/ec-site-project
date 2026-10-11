@@ -120,7 +120,7 @@ describe('RegisterPage', () => {
     await user.type(screen.getByLabelText(/^パスワード$/i), 'short')
 
     await waitFor(() => {
-      expect(screen.getByText(/パスワードは6文字以上で入力してください/i)).toBeInTheDocument()
+      expect(screen.getByText(/パスワードは8文字以上で入力してください/i)).toBeInTheDocument()
     })
   })
 
