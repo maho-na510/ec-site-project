@@ -64,14 +64,14 @@ describe('ResetPasswordPage', () => {
       expect(mockResetPassword).not.toHaveBeenCalled()
     })
 
-    it('パスワードが6文字未満の場合エラーが表示される', async () => {
+    it('パスワードが8文字未満の場合エラーが表示される', async () => {
       const user = userEvent.setup()
 
       await user.type(screen.getByLabelText(/新しいパスワード/i), 'abc')
       await user.type(screen.getByLabelText(/パスワード（確認）/i), 'abc')
       await user.click(screen.getByRole('button', { name: /パスワードを変更する/i }))
 
-      expect(screen.getByText(/パスワードは6文字以上/i)).toBeInTheDocument()
+      expect(screen.getByText(/パスワードは8文字以上、英字・数字を含めてください/i)).toBeInTheDocument()
       expect(mockResetPassword).not.toHaveBeenCalled()
     })
 
@@ -79,12 +79,12 @@ describe('ResetPasswordPage', () => {
       const user = userEvent.setup()
       mockResetPassword.mockResolvedValueOnce({ message: 'ok' })
 
-      await user.type(screen.getByLabelText(/新しいパスワード/i), 'newpassword')
-      await user.type(screen.getByLabelText(/パスワード（確認）/i), 'newpassword')
+      await user.type(screen.getByLabelText(/新しいパスワード/i), 'newpassword1')
+      await user.type(screen.getByLabelText(/パスワード（確認）/i), 'newpassword1')
       await user.click(screen.getByRole('button', { name: /パスワードを変更する/i }))
 
       await waitFor(() => {
-        expect(mockResetPassword).toHaveBeenCalledWith('valid-token-123', 'newpassword')
+        expect(mockResetPassword).toHaveBeenCalledWith('valid-token-123', 'newpassword1')
         expect(mockNavigate).toHaveBeenCalledWith(
           '/login',
           expect.objectContaining({ state: expect.objectContaining({ message: expect.any(String) }) })
@@ -97,8 +97,8 @@ describe('ResetPasswordPage', () => {
       const err = Object.assign(new Error('Expired'), { statusCode: 401 })
       mockResetPassword.mockRejectedValueOnce(err)
 
-      await user.type(screen.getByLabelText(/新しいパスワード/i), 'newpassword')
-      await user.type(screen.getByLabelText(/パスワード（確認）/i), 'newpassword')
+      await user.type(screen.getByLabelText(/新しいパスワード/i), 'newpassword1')
+      await user.type(screen.getByLabelText(/パスワード（確認）/i), 'newpassword1')
       await user.click(screen.getByRole('button', { name: /パスワードを変更する/i }))
 
       await waitFor(() => {
@@ -110,8 +110,8 @@ describe('ResetPasswordPage', () => {
       const user = userEvent.setup()
       mockResetPassword.mockRejectedValueOnce(new Error('Server error'))
 
-      await user.type(screen.getByLabelText(/新しいパスワード/i), 'newpassword')
-      await user.type(screen.getByLabelText(/パスワード（確認）/i), 'newpassword')
+      await user.type(screen.getByLabelText(/新しいパスワード/i), 'newpassword1')
+      await user.type(screen.getByLabelText(/パスワード（確認）/i), 'newpassword1')
       await user.click(screen.getByRole('button', { name: /パスワードを変更する/i }))
 
       await waitFor(() => {
