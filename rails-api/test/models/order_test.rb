@@ -86,7 +86,7 @@ class OrderTest < ActiveSupport::TestCase
     new_order.save
 
     assert_not_nil new_order.order_number
-    assert_match(/ORD-\d{8}-[A-Z0-9]{6}/, new_order.order_number)
+    assert_match(/ORD-\d{8}-[0-9a-f-]{36}/, new_order.order_number)
   end
 
   test "should filter by status" do
