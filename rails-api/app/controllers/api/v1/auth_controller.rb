@@ -98,10 +98,15 @@ module Api
         result = AuthenticationService.refresh_token(token)
 
         if result[:success]
-          render json: {
-            success: true,
-            data: { access_token: result[:access_token] }
-          }, status: :ok
+          cookies[:access_token] = {
+            value: result[:access_token],
+            httponly: true,
+            secure: Rails.env.production?,
+            same_site: :lax,
+            expires: 24.hours.from_now,
+            path: '/'
+          }
+          render json: { success: true }, status: :ok
         else
           render json: {
             success: false,

@@ -34,15 +34,8 @@ class Order < ApplicationRecord
 
   def cancel!
     raise "Cannot cancel order in #{status} status" unless can_be_cancelled?
-
-    transaction do
-      # Restore stock
-      order_items.each do |item|
-        item.product.add_stock!(item.quantity)
-      end
-
-      update!(status: 'cancelled')
-    end
+    order_items.each { |item| item.product.add_stock!(item.quantity) }
+    update!(status: 'cancelled')
   end
 
   def mark_processing!
@@ -74,19 +67,11 @@ class Order < ApplicationRecord
   end
 
   private
-
-  def generate_order_number
-    # Generate unique order number: ORD-YYYYMMDD-XXXXXX
-    date_part = Time.current.strftime('%Y%m%d')
-    random_part = SecureRandom.hex(3).upcase
-
-    self.order_number = "ORD-#{date_part}-#{random_part}"
-
+  
     # Ensure uniqueness
-    while Order.exists?(order_number: order_number)
-      random_part = SecureRandom.hex(3).upcase
-      self.order_number = "ORD-#{date_part}-#{random_part}"
-    end
+  def generate_order_number
+    date_part = Time.current.strftime('%Y%m%d')
+    self.order_number = "ORD-#{date_part}-#{SecureRandom.uuid}"
   end
 
   def calculate_total_amount

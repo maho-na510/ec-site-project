@@ -26,7 +26,7 @@ class AuthController extends Controller
         ]);
 
         try {
-            $result = $this->authService->login($credentials);
+            $result = $this->authService->login($credentials, $request->ip(), $request->userAgent());
 
             $ttlMinutes = config('jwt.ttl', 60);
             $cookie = cookie(
@@ -88,10 +88,15 @@ class AuthController extends Controller
         }
     }
 
-    public function refresh(): JsonResponse
+    /**
+     * Refresh admin token.
+     *
+     * @return JsonResponse
+     */
+    public function refresh(Request $request): JsonResponse
     {
         try {
-            $result = $this->authService->refresh();
+            $result = $this->authService->refresh($request->ip(), $request->userAgent());
 
             return response()->json([
                 'success' => true,

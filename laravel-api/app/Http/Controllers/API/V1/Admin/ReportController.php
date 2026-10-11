@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
 
 class ReportController extends Controller
 {
@@ -68,8 +69,8 @@ class ReportController extends Controller
         ]);
 
         try {
-            $startDate = new \DateTime($validated['start_date']);
-            $endDate = new \DateTime($validated['end_date']);
+            $startDate = Carbon::parse($validated['start_date'])->startOfDay();
+            $endDate   = Carbon::parse($validated['end_date'])->endOfDay();
 
             $result = $this->reportService->generateSalesReport($startDate, $endDate);
 

@@ -17,7 +17,7 @@ class AdminAuthService
      * @return array
      * @throws ValidationException
      */
-    public function login(array $credentials): array
+    public function login(array $credentials, string $ipAddress, string $userAgent): array
     {
         $admin = Admin::where('email', $credentials['email'])->first();
 
@@ -30,7 +30,7 @@ class AdminAuthService
         $token = JWTAuth::fromUser($admin);
 
         // Store session in Redis
-        $this->storeSession($admin, $token);
+        $this->storeSession($admin, $token, $ipAddress, $userAgent);
 
         return [
             'admin' => [
@@ -64,13 +64,13 @@ class AdminAuthService
      *
      * @return array
      */
-    public function refresh(): array
+    public function refresh(string $ipAddress, string $userAgent): array
     {
         $newToken = JWTAuth::refresh(JWTAuth::getToken());
         $admin = JWTAuth::setToken($newToken)->authenticate();
 
         // Update session in Redis
-        $this->storeSession($admin, $newToken);
+        $this->storeSession($admin, $newToken, $ipAddress, $userAgent);
 
         return [
             'token' => $newToken,
@@ -96,7 +96,7 @@ class AdminAuthService
      * @param string $token
      * @return void
      */
-    private function storeSession(Admin $admin, string $token): void
+    private function storeSession(Admin $admin, string $token, string $ipAddress, string $userAgent): void
     {
         $sessionKey = "session:admin:{$admin->id}:" . md5($token);
         $sessionData = [
@@ -104,8 +104,8 @@ class AdminAuthService
             'email' => $admin->email,
             'created_at' => now()->toIso8601String(),
             'last_accessed' => now()->toIso8601String(),
-            'ip_address' => request()->ip(),
-            'user_agent' => request()->userAgent(),
+            'ip_address' => $ipAddress,
+            'user_agent' => $userAgent,
         ];
 
         // Store with TTL matching JWT expiration
