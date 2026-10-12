@@ -99,7 +99,7 @@ class OrderProcessingService
 
       rows_updated = Product.where(id: product.id)
                             .where('stock_quantity >= ?', item.quantity)
-                            .update_all("stock_quantity = stock_quantity - #{item.quantity.to_i}")
+                            .update_all(["stock_quantity = stock_quantity - ?, updated_at = ?", item.quantity, Time.current])
 
       if rows_updated == 0
         raise InsufficientStockError,
