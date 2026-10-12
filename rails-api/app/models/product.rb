@@ -48,7 +48,7 @@ class Product < ApplicationRecord
   def deduct_stock!(quantity)
     rows_updated = self.class.where(id: id)
                              .where('stock_quantity >= ?', quantity)
-                             .update_all("stock_quantity = stock_quantity - #{quantity.to_i}")
+                             .update_all(["stock_quantity = stock_quantity - ?, updated_at = ?", quantity, Time.current])
 
     if rows_updated == 0
       reload  # 最新のstock_quantityを取得してエラーメッセージに使う
@@ -60,7 +60,7 @@ class Product < ApplicationRecord
 
    # Add stock (atomic SQL increment to avoid stale in-memory values)
   def add_stock!(quantity)
-    self.class.where(id: id).update_all("stock_quantity = stock_quantity + #{quantity.to_i}")
+    self.class.where(id: id).update_all(["stock_quantity = stock_quantity + ?, updated_at = ?", quantity, Time.current])
     reload
   end
 
