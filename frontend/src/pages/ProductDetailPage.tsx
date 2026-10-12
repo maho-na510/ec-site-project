@@ -14,7 +14,7 @@ const ProductDetailPage: React.FC = () => {
   const navigate = useNavigate();
   const productId = parseInt(id || '0');
   const { data: product, isLoading, error } = useProduct(productId);
-  const { addToCart, isLoading: isAddingToCart } = useCart();
+  const { cart, addToCart, isLoading: isAddingToCart } = useCart();
   const { isAuthenticated } = useAuth();
   const addToWishlist = useAddToWishlist();
   const removeFromWishlist = useRemoveFromWishlist();
@@ -34,7 +34,7 @@ const ProductDetailPage: React.FC = () => {
   };
 
   const incrementQuantity = () => {
-    if (product && quantity < product.stockQuantity) {
+    if (product && quantity <remainingStock) {
       setQuantity(quantity + 1);
     }
   };
@@ -65,7 +65,9 @@ const ProductDetailPage: React.FC = () => {
 
   const images = product.images || [];
   const mainImage = images[selectedImage]?.imageUrl || '/placeholder-product.jpg';
-  const isOutOfStock = product.stockQuantity === 0;
+  const quantityInCart = cart?.items.find((item) => item.productId === productId)?.quantity ?? 0;
+  const remainingStock = product.stockQuantity - quantityInCart;
+  const isOutOfStock = remainingStock <= 0;
   const isAvailable = product.isActive && !product.isSuspended && !isOutOfStock;
 
   return (
@@ -190,7 +192,7 @@ const ProductDetailPage: React.FC = () => {
                   </span>
                   <button
                     onClick={incrementQuantity}
-                    disabled={quantity >= product.stockQuantity}
+                    disabled={quantity >= remainingStock}
                     className="w-10 h-10 flex items-center justify-center text-lg font-medium text-gray-700 bg-white hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition"
                   >
                     ＋

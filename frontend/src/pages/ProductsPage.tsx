@@ -5,7 +5,7 @@ import { useProducts, useCategories } from '../hooks/useProducts';
 import { useAddToWishlist, useIsInWishlist } from '../hooks/useWishlist';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
-import { Product, Category, ProductSortBy } from '../types';
+import { Product, Category, ProductSortBy, Cart } from '../types';
 import { formatCurrency } from '../utils/format';
 import LoadingSpinner from '../components/shared/LoadingSpinner';
 import Button from '../components/shared/Button';
@@ -45,7 +45,7 @@ const ProductsPage: React.FC = () => {
   });
 
   const { data: categoriesData } = useCategories();
-  const { addToCart } = useCart();
+  const { cart, addToCart } = useCart();
 
   const categories: Category[] = Array.isArray(categoriesData) ? categoriesData : [];
   const allProducts: Product[] = (data as any)?.data || [];
@@ -210,6 +210,7 @@ const ProductsPage: React.FC = () => {
                 <ProductCard
                   key={product.id}
                   product={product}
+                  cart={cart}
                   onAddToCart={() => addToCart(product.id, 1)}
                 />
               ))}
@@ -234,12 +235,15 @@ const ProductsPage: React.FC = () => {
 // ---- 商品カード ----
 interface ProductCardProps {
   product: Product;
+  cart: Cart | null;
   onAddToCart: () => void;
 }
 
-const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
+const ProductCard: React.FC<ProductCardProps> = ({ product, cart, onAddToCart }) => {
   const mainImage = product.images?.[0]?.imageUrl || '/placeholder-product.jpg';
-  const isOutOfStock = product.stockQuantity === 0;
+  const quantityInCart = cart?.items.find((item) => item.productId === product.id)?.quantity ?? 0;
+  const remainingStock = product.stockQuantity - quantityInCart;
+  const isOutOfStock = remainingStock <= 0;
   const isAvailable = product.isActive && !product.isSuspended && !isOutOfStock;
   const { isAuthenticated } = useAuth();
   const addToWishlist = useAddToWishlist();
