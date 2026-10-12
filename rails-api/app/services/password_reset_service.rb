@@ -22,12 +22,11 @@ class PasswordResetService
     # Send password reset email
     # In production: Use background job
     # PasswordResetMailer.reset_instructions(user, reset_token).deliver_later
-    Rails.logger.info "Password reset token generated for user #{user.email}: #{reset_token.token}"
+    Rails.logger.info "Password reset requested for user_id=#{user.id}" 
 
     {
       success: true,
-      message: 'Password reset instructions sent to your email',
-      token: reset_token.token # Remove this in production (only send via email)
+      message: 'If the email exists, a password reset link has been sent',
     }
   end
 
@@ -50,20 +49,21 @@ class PasswordResetService
       return { success: false, error: 'Password confirmation does not match' }
     end
 
-    # Update password
-    if user.update(password: @params[:password], password_confirmation: @params[:password_confirmation])
-      # Mark token as used
-      token.mark_as_used!
+    begin
+      ActiveRecord::Base.transaction do
+        user.update!(password: @params[:password], password_confirmation: @params[:password_confirmation])
+        token.mark_as_used!
+      end
 
-      # Invalidate all existing sessions
+      # Redisはトランザクション外（DBロールバックの影響を受けないため）
       invalidate_all_sessions(user)
 
       {
         success: true,
         message: 'Password reset successfully. Please log in with your new password.'
       }
-    else
-      { success: false, errors: user.errors.messages }
+    rescue ActiveRecord::RecordInvalid => e
+      { success: false, errors: e.record.errors.messages }
     end
   end
 
@@ -71,9 +71,12 @@ class PasswordResetService
 
   # Invalidate all existing sessions for user
   def invalidate_all_sessions(user)
-    # Remove all session keys for this user from Redis
     pattern = "session:user:#{user.id}:*"
-    keys = Redis.current.keys(pattern)
-    Redis.current.del(*keys) if keys.any?
+    cursor = "0"
+    loop do
+      cursor, keys = $redis.scan(cursor, match: pattern, count: 100)
+      $redis.del(*keys) if keys.any?
+      break if cursor == "0"
+    end
   end
 end

@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Services\InventoryService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Carbon\Carbon;
 
 class InventoryController extends Controller
 {
@@ -200,11 +201,11 @@ class InventoryController extends Controller
 
         try {
             $startDate = isset($validated['start_date'])
-                ? new \DateTime($validated['start_date'])
-                : (new \DateTime())->modify('-30 days');
+                ? Carbon::parse($validated['start_date'])->startOfDay()
+                : Carbon::now()->subDays(30)->startOfDay();
             $endDate = isset($validated['end_date'])
-                ? new \DateTime($validated['end_date'])
-                : new \DateTime();
+                ? Carbon::parse($validated['end_date'])->endOfDay()
+                : Carbon::now()->endOfDay();
 
             $filters = [
                 'product_id' => $validated['product_id'] ?? null,

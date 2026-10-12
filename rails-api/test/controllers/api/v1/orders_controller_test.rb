@@ -1,4 +1,5 @@
 require "test_helper"
+require "minitest/mock"
 
 class Api::V1::OrdersControllerTest < ActionDispatch::IntegrationTest
   setup do
@@ -29,14 +30,16 @@ class Api::V1::OrdersControllerTest < ActionDispatch::IntegrationTest
     cart = @user.carts.create!
     cart.cart_items.create!(product: @product, quantity: 1)
 
-    assert_difference('Order.count', 1) do
-      post api_v1_orders_url,
-        headers: auth_headers(@user),
-        params: {
-          shipping_address: '123 Test St, Test City, TS 12345',
-          payment_method: 'credit_card'
-        },
-        as: :json
+    PaymentService.stub(:process_payment, { success: true, transaction_id: 'TEST-TXN-3', message: 'Payment processed successfully' }) do
+      assert_difference('Order.count', 1) do
+        post api_v1_orders_url,
+          headers: auth_headers(@user),
+          params: {
+            shipping_address: '123 Test St, Test City, TS 12345',
+            payment_method: 'credit_card'
+          },
+          as: :json
+      end
     end
 
     assert_response :created
@@ -103,4 +106,22 @@ class Api::V1::OrdersControllerTest < ActionDispatch::IntegrationTest
     assert_response :unprocessable_entity
     assert_not json_response['success']
   end
+
+  test "should return 500 when unexpected error occurs during cancel" do
+  pending_order = @user.orders.create!(
+    order_number: 'TEST-003',
+    total_amount: 100,
+    status: 'pending',
+    shipping_address: '123 Test St'
+  )
+
+  # cancel! が予期しないDBエラーを起こすことをシミュレート
+  Order.stub_any_instance(:cancel!, -> { raise ActiveRecord::StatementInvalid, "DB error" }) do
+    post cancel_api_v1_order_url(pending_order),
+      headers: auth_headers(@user),
+      as: :json
+  end
+
+  assert_response :internal_server_error
+end
 end

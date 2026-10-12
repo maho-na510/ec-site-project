@@ -159,6 +159,7 @@ GEM
     method_source (1.1.0)
     mini_mime (1.1.5)
     minitest (5.27.0)
+    minitest-stub_any_instance (1.0.3)
     msgpack (1.8.0)
     mutex_m (0.3.0)
     mysql2 (0.5.7)
@@ -314,6 +315,7 @@ DEPENDENCIES
   jwt (~> 2.7)
   kaminari (~> 1.2)
   minitest (~> 5.16)
+  minitest-stub_any_instance
   mysql2 (~> 0.5)
   pry-rails (~> 0.3)
   puma (~> 6.0)

@@ -145,6 +145,25 @@ class Api::V1::AuthControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert json_response['success']
-    assert_not_nil json_response['data']['access_token']
+    assert_not_nil response.cookies['access_token']
+    assert_nil json_response.dig('data', 'access_token')
+  end
+
+  test "should return unauthorized when refreshing without token" do
+    post api_v1_auth_refresh_url, as: :json
+
+    assert_response :unauthorized
+    assert_not json_response['success']
+  end
+
+  test "should be able to use new token after refresh" do
+    post api_v1_auth_refresh_url, headers: auth_headers(@user), as: :json
+    assert_response :success
+
+    new_token = response.cookies['access_token']
+    assert_not_nil new_token
+
+    get api_v1_users_me_url, headers: { 'Authorization' => "Bearer #{new_token}" }, as: :json
+    assert_response :success
   end
 end
