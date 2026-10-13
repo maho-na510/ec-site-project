@@ -40,15 +40,10 @@ class PasswordResetService
 
     user = token.user
 
-    # Validate new password
-    if @params[:password].blank? || @params[:password].length < 8
-      return { success: false, error: 'Password must be at least 8 characters' }
+    if @params[:password].blank?
+      return { success: false, errors: { password: ["can't be blank"] } }
     end
-
-    if @params[:password] != @params[:password_confirmation]
-      return { success: false, error: 'Password confirmation does not match' }
-    end
-
+    
     begin
       ActiveRecord::Base.transaction do
         user.update!(password: @params[:password], password_confirmation: @params[:password_confirmation])

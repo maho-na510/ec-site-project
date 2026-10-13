@@ -46,25 +46,100 @@ class PasswordResetServiceTest < ActiveSupport::TestCase
   # =========================================================
 
   test "request_reset does not log the reset token" do
-    logged = []
-    # Railsのloggerをキャプチャ
-    Rails.logger.stub(:info, ->(msg) { logged << msg }) do
-      PasswordResetService.new(email: @existing_user.email).request_reset
-    end
+    log_output = StringIO.new
+    original_logger = Rails.logger
+    Rails.logger = Logger.new(log_output)
 
-    logged.each do |msg|
-      assert_no_match(/[A-Za-z0-9_\-]{20,}/, msg, "ログにトークンらしき文字列が含まれています")
-    end
+    PasswordResetService.new(email: @existing_user.email).request_reset
+
+    Rails.logger = original_logger
+
+    assert_no_match(/[A-Za-z0-9_\-]{20,}/, log_output.string, "ログにトークンらしき文字列が含まれています")
   end
 
   test "request_reset does not log user email address" do
-    logged = []
-    Rails.logger.stub(:info, ->(msg) { logged << msg }) do
-      PasswordResetService.new(email: @existing_user.email).request_reset
-    end
+    log_output = StringIO.new
+    original_logger = Rails.logger
+    Rails.logger = Logger.new(log_output)
 
-    logged.each do |msg|
-      assert_no_match(/@/, msg, "ログにメールアドレスが含まれています")
-    end
+    PasswordResetService.new(email: @existing_user.email).request_reset
+
+    Rails.logger = original_logger
+
+    assert_no_match(/@/, log_output.string, "ログにメールアドレスが含まれています")
   end
+
+  # =========================================================
+  # reset_password: バリデーションはモデルに委譲されること
+  # =========================================================
+
+  test "reset_password succeeds with valid token and password" do
+    token = @existing_user.password_reset_tokens.create!
+    service = PasswordResetService.new(
+      token: token.token,
+      password: "NewPass1",
+      password_confirmation: "NewPass1"
+    )
+    service.define_singleton_method(:invalidate_all_sessions) { |_user| }
+    result = service.reset_password
+
+    assert result[:success]
+    assert_equal "Password reset successfully. Please log in with your new password.", result[:message]
+  end
+
+  test "reset_password fails when password is too short via model validation" do
+    token = @existing_user.password_reset_tokens.create!
+    service = PasswordResetService.new(
+      token: token.token,
+      password: "abc1",
+      password_confirmation: "abc1"
+    )
+    service.define_singleton_method(:invalidate_all_sessions) { |_user| }
+    result = service.reset_password
+
+    assert_not result[:success]
+    assert result[:errors].present?
+    assert result[:errors][:password].any?
+  end
+
+  test "reset_password fails when password is blank via model validation" do
+    token = @existing_user.password_reset_tokens.create!
+    service = PasswordResetService.new(
+      token: token.token,
+      password: "",
+      password_confirmation: ""
+    )
+    service.define_singleton_method(:invalidate_all_sessions) { |_user| }
+    result = service.reset_password
+
+    assert_not result[:success]
+    assert result[:errors].present?
+  end
+
+  test "reset_password fails when confirmation does not match via model validation" do
+    token = @existing_user.password_reset_tokens.create!
+    service = PasswordResetService.new(
+      token: token.token,
+      password: "NewPass1",
+      password_confirmation: "Different1"
+    )
+    service.define_singleton_method(:invalidate_all_sessions) { |_user| }
+    result = service.reset_password
+
+    assert_not result[:success]
+    assert result[:errors].present?
+  end
+
+  test "reset_password fails with invalid token" do
+    service = PasswordResetService.new(
+      token: "invalid_token",
+      password: "NewPass1",
+      password_confirmation: "NewPass1"
+    )
+    result = service.reset_password
+
+    assert_not result[:success]
+    assert_equal "Invalid or expired reset token", result[:error]
+  end
+
 end
