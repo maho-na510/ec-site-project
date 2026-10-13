@@ -19,18 +19,39 @@ class ImageUploadService
      */
     public function uploadProductImages(Product $product, array $images): array
     {
-        $uploadedImages = [];
-        $displayOrder = 0;
-
+        $validFiles = [];
         foreach ($images as $image) {
             if ($image instanceof UploadedFile) {
-                $uploadedImage = $this->uploadImage($image, $product, $displayOrder);
-                $uploadedImages[] = $uploadedImage;
-                $displayOrder++;
+                $this->validateImage($image);
+                $validFiles[] = $image;
             }
         }
 
-        return $uploadedImages;
+        if (empty($validFiles)) {
+            return [];
+        }
+
+        $records = [];
+        $now = now();
+        foreach ($validFiles as $displayOrder => $file) {
+            $filename = $this->generateFilename($file);
+            $path = $file->storeAs('products/' . $product->id, $filename, 'public');
+
+            $records[] = [
+                'product_id'    => $product->id,
+                'image_url'     => $path,
+                'display_order' => $displayOrder,
+                'created_at'    => $now,
+                'updated_at'    => $now,
+            ];
+        }
+
+        ProductImage::insert($records);
+
+        return ProductImage::where('product_id', $product->id)
+            ->orderBy('display_order')
+            ->get()
+            ->all();
     }
 
     /**
