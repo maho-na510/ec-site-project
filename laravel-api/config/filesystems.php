@@ -9,6 +9,7 @@ return [
     */
 
     'default' => env('FILESYSTEM_DISK', 'local'),
+    'product_images' => env('PRODUCT_IMAGE_DISK', 'public'),
 
     /*
     |--------------------------------------------------------------------------
