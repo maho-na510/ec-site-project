@@ -12,6 +12,7 @@ class Payment < ApplicationRecord
                      inclusion: { in: %w[pending completed failed refunded] }
   validates :order, presence: true
   validate :amount_matches_order_total
+  validates :transaction_id, uniqueness: true, allow_nil: true
 
   # Callbacks
   before_create :generate_transaction_id
@@ -62,10 +63,7 @@ class Payment < ApplicationRecord
 
   def generate_transaction_id
     # Generate unique transaction ID: TXN-TIMESTAMP-RANDOM
-    timestamp = Time.current.to_i
-    random = SecureRandom.hex(4).upcase
-
-    self.transaction_id = "TXN-#{timestamp}-#{random}"
+    self.transaction_id = "TXN-#{SecureRandom.uuid}"
   end
 
   def amount_matches_order_total
