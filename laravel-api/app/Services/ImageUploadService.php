@@ -22,12 +22,21 @@ class ImageUploadService
         $uploadedImages = [];
         $displayOrder = 0;
 
-        foreach ($images as $image) {
-            if ($image instanceof UploadedFile) {
-                $uploadedImage = $this->uploadImage($image, $product, $displayOrder);
-                $uploadedImages[] = $uploadedImage;
-                $displayOrder++;
+        try {
+            foreach ($images as $image) {
+                if ($image instanceof UploadedFile) {
+                    $uploadedImage = $this->uploadImage($image, $product, $displayOrder);
+                    $uploadedImages[] = $uploadedImage;
+                    $displayOrder++;
+                }
             }
+        } catch (\Exception $e) {
+            // 失敗した時点でそれまでにアップロードしたファイルをすべて削除
+            foreach ($uploadedImages as $uploaded) {
+                Storage::disk('public')->delete($uploaded->image_url);
+                $uploaded->delete();
+            }
+            throw $e;
         }
 
         return $uploadedImages;
@@ -55,13 +64,17 @@ class ImageUploadService
             $filename,
             'public'
         );
-
-        // Create product image record
-        return ProductImage::create([
-            'product_id' => $product->id,
-            'image_url' => $path,
-            'display_order' => $displayOrder,
-        ]);
+        try {
+            return ProductImage::create([
+                'product_id' => $product->id,
+                'image_url' => $path,
+                'display_order' => $displayOrder,
+            ]);
+        } catch (\Exception $e) {
+            // DBへの保存が失敗したら、アップロード済みファイルを削除して元に戻す
+            Storage::disk('public')->delete($path);
+            throw $e;
+        }
     }
 
     /**
