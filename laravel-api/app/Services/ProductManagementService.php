@@ -22,17 +22,65 @@ class ProductManagementService
     }
 
     /**
+     * Get a single product by ID with caching.
+     *
+     * @param int $productId
+     * @return Product|null
+     */
+    public function getProduct(int $productId): ?Product
+    {
+        return Cache::remember(
+            "product:{$productId}",
+            now()->addHour(),
+            fn() => Product::with(['category', 'images', 'creator'])->find($productId)
+        );
+    }
+
+    /**
      * Get all products with filtering and pagination.
      *
      * @param array $filters
      * @param int $perPage
-     * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator
+     * @param int $page
+     * @return mixed
      */
-    public function getProducts(array $filters = [], int $perPage = 20)
+    public function getProducts(array $filters = [], int $perPage = 20, int $page = 1): mixed
+    {
+        $cacheKey = 'products:list:' . md5(serialize($filters) . $perPage . $page);
+
+        try {
+            $cached = Cache::tags(['products_list'])->get($cacheKey);
+            if ($cached !== null) {
+                return $cached;
+            }
+
+            return Cache::lock("lock:{$cacheKey}", 10)->block(5, function () use ($cacheKey, $filters, $perPage) {
+                $cached = Cache::tags(['products_list'])->get($cacheKey);
+                if ($cached !== null) {
+                    return $cached;
+                }
+
+                $result = $this->fetchProducts($filters, $perPage);
+                Cache::tags(['products_list'])->put($cacheKey, $result, now()->addMinutes(5));
+                return $result;
+            });
+
+        } catch (\BadMethodCallException $e) {
+            return $this->fetchProducts($filters, $perPage);
+        }
+    }
+
+    /**
+     * Build and execute the product list query.
+     *
+     * @param array $filters
+     * @param int $perPage
+     * @return mixed
+     */
+    private function fetchProducts(array $filters, int $perPage): mixed
     {
         $query = Product::with(['category', 'images', 'creator']);
 
-        // Apply filters
         if (isset($filters['category_id'])) {
             $query->where('category_id', $filters['category_id']);
         }
@@ -66,8 +114,7 @@ class ProductManagementService
             }
         }
 
-        // Apply sorting
-        $sortBy = $filters['sort_by'] ?? 'created_at';
+        $sortBy    = $filters['sort_by'] ?? 'created_at';
         $sortOrder = $filters['sort_order'] ?? 'desc';
         $query->orderBy($sortBy, $sortOrder);
 
@@ -84,24 +131,21 @@ class ProductManagementService
     public function createProduct(array $data, Admin $admin): Product
     {
         return DB::transaction(function () use ($data, $admin) {
-            // Create product
             $product = Product::create([
-                'category_id' => $data['category_id'],
+                'category_id'         => $data['category_id'],
                 'created_by_admin_id' => $admin->id,
-                'name' => $data['name'],
-                'description' => $data['description'] ?? null,
-                'price' => $data['price'],
-                'stock_quantity' => $data['initial_stock'] ?? 0,
-                'is_active' => $data['is_active'] ?? true,
-                'is_suspended' => false,
+                'name'                => $data['name'],
+                'description'         => $data['description'] ?? null,
+                'price'               => $data['price'],
+                'stock_quantity'      => $data['initial_stock'] ?? 0,
+                'is_active'           => $data['is_active'] ?? true,
+                'is_suspended'        => false,
             ]);
 
-            // Upload and attach images if provided
             if (isset($data['images']) && is_array($data['images'])) {
                 $this->imageUploadService->uploadProductImages($product, $data['images']);
             }
 
-            // Create initial inventory log
             if ($product->stock_quantity > 0) {
                 $this->inventoryService->logInventoryChange(
                     $product,
@@ -113,8 +157,7 @@ class ProductManagementService
                 );
             }
 
-            // Clear product cache
-            $this->clearProductCache();
+            $this->clearProductListCache();
 
             return $product->load(['category', 'images', 'creator']);
         });
@@ -133,25 +176,20 @@ class ProductManagementService
         return DB::transaction(function () use ($product, $data, $admin) {
             $oldStockQuantity = $product->stock_quantity;
 
-            // Update product attributes
             $product->update([
-                'category_id' => $data['category_id'] ?? $product->category_id,
-                'name' => $data['name'] ?? $product->name,
-                'description' => $data['description'] ?? $product->description,
-                'price' => $data['price'] ?? $product->price,
-                'is_active' => $data['is_active'] ?? $product->is_active,
+                'category_id'  => $data['category_id'] ?? $product->category_id,
+                'name'         => $data['name'] ?? $product->name,
+                'description'  => $data['description'] ?? $product->description,
+                'price'        => $data['price'] ?? $product->price,
+                'is_active'    => $data['is_active'] ?? $product->is_active,
                 'is_suspended' => $data['is_suspended'] ?? $product->is_suspended,
             ]);
 
-            // Handle images if provided
             if (isset($data['images']) && is_array($data['images'])) {
-                // Remove old images
                 $product->images()->delete();
-                // Upload new images
                 $this->imageUploadService->uploadProductImages($product, $data['images']);
             }
 
-            // If stock quantity changed, log it
             if (isset($data['stock_quantity']) && $data['stock_quantity'] !== $oldStockQuantity) {
                 $product->stock_quantity = $data['stock_quantity'];
                 $product->save();
@@ -166,8 +204,8 @@ class ProductManagementService
                 );
             }
 
-            // Clear product cache
-            $this->clearProductCache();
+            $this->clearProductCache($product->id);
+            $this->clearProductListCache();
 
             return $product->load(['category', 'images', 'creator']);
         });
@@ -181,10 +219,11 @@ class ProductManagementService
      */
     public function deleteProduct(Product $product): void
     {
+        $productId = $product->id;
         $product->delete();
 
-        // Clear product cache
-        $this->clearProductCache();
+        $this->clearProductCache($productId);
+        $this->clearProductListCache();
     }
 
     /**
@@ -199,8 +238,8 @@ class ProductManagementService
             'is_suspended' => !$product->is_suspended,
         ]);
 
-        // Clear product cache
-        $this->clearProductCache();
+        $this->clearProductCache($product->id);
+        $this->clearProductListCache();
 
         return $product;
     }
@@ -220,18 +259,28 @@ class ProductManagementService
     }
 
     /**
-     * Clear product cache.
+     * Clear the cache for a specific product.
+     *
+     * @param int $productId
+     * @return void
+     */
+    private function clearProductCache(int $productId): void
+    {
+        Cache::forget("product:{$productId}");
+    }
+
+    /**
+     * Clear all product list caches.
+     * Use only for operations that change the number of products (create/delete).
      *
      * @return void
      */
-    private function clearProductCache(): void
+    private function clearProductListCache(): void
     {
-        // Cache::tags はRedis/Memcachedのみ対応。fileドライバでは例外になるためスキップ。
-        // キャッシュを使い始める際は CACHE_DRIVER=redis を設定すること。
         try {
-            Cache::tags(['products'])->flush();
+            Cache::tags(['products_list'])->flush();
         } catch (\BadMethodCallException $e) {
-            // タグ非対応のドライバ（fileなど）では何もしない
+
         }
     }
 }

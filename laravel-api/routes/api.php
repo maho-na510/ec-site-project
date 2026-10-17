@@ -50,7 +50,7 @@ Route::prefix('v1/admin')->group(function () {
         Route::get('/products', [ProductController::class, 'index'])->name('admin.products.index');
         Route::post('/products', [ProductController::class, 'store'])->name('admin.products.store');
         Route::get('/products/low-stock', [ProductController::class, 'lowStock'])->name('admin.products.low-stock');
-        Route::get('/products/{product}', [ProductController::class, 'show'])->name('admin.products.show');
+        Route::get('/products/{id}', [ProductController::class, 'show'])->name('admin.products.show');
         Route::put('/products/{product}', [ProductController::class, 'update'])->name('admin.products.update');
         Route::delete('/products/{product}', [ProductController::class, 'destroy'])->name('admin.products.destroy');
         Route::patch('/products/{product}/toggle-suspension', [ProductController::class, 'toggleSuspension'])
