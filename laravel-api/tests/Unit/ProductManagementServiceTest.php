@@ -8,6 +8,8 @@ use App\Models\Product;
 use App\Models\Category;
 use App\Services\ProductManagementService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
 class ProductManagementServiceTest extends TestCase
 {
@@ -171,5 +173,23 @@ class ProductManagementServiceTest extends TestCase
         $products = $this->service->getProducts($filters, 20);
 
         $this->assertEquals(3, $products->total());
+    }
+
+    public function test_update_product_deletes_old_image_files_from_storage(): void
+    {
+        Storage::fake('public');
+
+        $product = Product::factory()->create(['category_id' => $this->category->id]);
+        $oldFile = UploadedFile::fake()->image('old.png');
+        $oldImage = $this->app->make(\App\Services\ImageUploadService::class)->uploadImage($oldFile, $product);
+
+        Storage::disk('public')->assertExists($oldImage->image_url);
+
+        $newFile = UploadedFile::fake()->image('new.png');
+        $this->service->updateProduct($product, [
+            'images' => [$newFile],
+        ], $this->admin);
+
+        Storage::disk('public')->assertMissing($oldImage->image_url);
     }
 }

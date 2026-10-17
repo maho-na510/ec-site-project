@@ -146,7 +146,7 @@ class ProductManagementService
             // Handle images if provided
             if (isset($data['images']) && is_array($data['images'])) {
                 // Remove old images
-                $product->images()->delete();
+                $this->imageUploadService->deleteProductImages($product);
                 // Upload new images
                 $this->imageUploadService->uploadProductImages($product, $data['images']);
             }
